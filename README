@@ -1,0 +1,6 @@
+# To do
+
+[x] Calculate Lipschitz constant
+[x] Use Lipschitz constant to set stepsize
+[x] Find smallest lambda with 0
+[ ] Implement solution path starting at lambda max

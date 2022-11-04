@@ -11,55 +11,44 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// rcpparma_hello_world
-arma::mat rcpparma_hello_world();
-RcppExport SEXP _VCM_rcpparma_hello_world() {
+// VCMM
+Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::colvec& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, const double kernel_scale, const double alpha, const double lambda, const uint max_iter, const double mult);
+RcppExport SEXP _VCM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP max_iterSEXP, SEXP multSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpparma_hello_world());
+    Rcpp::traits::input_parameter< const arma::colvec& >::type response(responseSEXP);
+    Rcpp::traits::input_parameter< const arma::ucolvec& >::type subject(subjectSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec& >::type response_time(response_timeSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type random_design(random_designSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec& >::type vcm_covariates(vcm_covariatesSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type fixed_covariates(fixed_covariatesSEXP);
+    Rcpp::traits::input_parameter< const arma::rowvec& >::type estimated_time(estimated_timeSEXP);
+    Rcpp::traits::input_parameter< const double >::type kernel_scale(kernel_scaleSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const uint >::type max_iter(max_iterSEXP);
+    Rcpp::traits::input_parameter< const double >::type mult(multSEXP);
+    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, kernel_scale, alpha, lambda, max_iter, mult));
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpparma_outerproduct
-arma::mat rcpparma_outerproduct(const arma::colvec& x);
-RcppExport SEXP _VCM_rcpparma_outerproduct(SEXP xSEXP) {
+// to_list_by_subject
+std::vector<arma::colvec> to_list_by_subject(const arma::uvec& subject, const arma::colvec& array);
+RcppExport SEXP _VCM_to_list_by_subject(SEXP subjectSEXP, SEXP arraySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpparma_outerproduct(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpparma_innerproduct
-double rcpparma_innerproduct(const arma::colvec& x);
-RcppExport SEXP _VCM_rcpparma_innerproduct(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpparma_innerproduct(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpparma_bothproducts
-Rcpp::List rcpparma_bothproducts(const arma::colvec& x);
-RcppExport SEXP _VCM_rcpparma_bothproducts(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpparma_bothproducts(x));
+    Rcpp::traits::input_parameter< const arma::uvec& >::type subject(subjectSEXP);
+    Rcpp::traits::input_parameter< const arma::colvec& >::type array(arraySEXP);
+    rcpp_result_gen = Rcpp::wrap(to_list_by_subject(subject, array));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_VCM_rcpparma_hello_world", (DL_FUNC) &_VCM_rcpparma_hello_world, 0},
-    {"_VCM_rcpparma_outerproduct", (DL_FUNC) &_VCM_rcpparma_outerproduct, 1},
-    {"_VCM_rcpparma_innerproduct", (DL_FUNC) &_VCM_rcpparma_innerproduct, 1},
-    {"_VCM_rcpparma_bothproducts", (DL_FUNC) &_VCM_rcpparma_bothproducts, 1},
+    {"_VCM_VCMM", (DL_FUNC) &_VCM_VCMM, 12},
+    {"_VCM_to_list_by_subject", (DL_FUNC) &_VCM_to_list_by_subject, 2},
     {NULL, NULL, 0}
 };
 
