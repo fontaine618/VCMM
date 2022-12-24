@@ -3,4 +3,15 @@
 [x] Calculate Lipschitz constant
 [x] Use Lipschitz constant to set stepsize
 [x] Find smallest lambda with 0
-[ ] Implement solution path starting at lambda max
+[x] Empirical Bayes to estimated random effects
+[x] Implement solution path starting at lambda max
+[x] Implement BIC for solution pas
+  - BIC should be -2llk +  vlog(nh)/nh (eq. -2llk <- rss since the other term is contsant, but there be some scaling issue?)
+[ ] Adaptively choose the kernel scale
+  - BIC might not be the best approach since log(nh) can get negative
+  - KLasso paper requires h~n^-1/5
+  - look at what the properties of log(nh)/(nh) are required? might need to restrict ot the monotonically decreasing part
+  - convex for h > e^(3/2) / n
+  - looks like choosing it without penalty should be very good
+[ ] Experiemnt with estimation of Sigma
+[ ] Connection to Spline, GP?

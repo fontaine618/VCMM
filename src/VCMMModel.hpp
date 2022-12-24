@@ -13,8 +13,12 @@ public:
   arma::mat b;
   arma::mat a;
   double alpha, lambda;
-  int px, pu, q, nt;
-  double La, Lb, momentum;
+  int px, pu, q, nt, max_iter;
+  double La, Lb, momentum, rel_tol;
+  arma::rowvec t0;
+  double objective, rss, parss;
+  double sig2;
+  arma::mat Sigma;
   
   VCMMModel(
     const int px,
@@ -22,20 +26,42 @@ public:
     const int nt,
     const int q,
     const double alpha,
-    const double lambda
+    const double lambda,
+    const arma::rowvec &t0
   );
   
   std::vector<arma::mat> linear_predictor(
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U
   );
-
+  
+  std::vector<arma::colvec> linear_predictor_at_observed_time(
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W
+  );
+  
   std::vector<arma::mat> residuals(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U
   );
-
+  
+  std::vector<arma::colvec> residuals_at_observed_time(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W
+  );
+  
+  std::vector<arma::colvec> precision_adjusted_residuals(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
   double loss(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
@@ -44,7 +70,25 @@ public:
       const std::vector<arma::mat> & P
   );
   
+  double compute_rss(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  double compute_parss(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
   double penalty();
+  
+  uint active();
   
   std::vector<arma::mat> gradients(
       const std::vector<arma::colvec> & Y,
@@ -99,7 +143,7 @@ public:
       double rel_tol
   );
   
-  double fit(
+  void fit(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
@@ -108,6 +152,26 @@ public:
       uint max_iter,
       double rel_tol
   );
+  
+  
+  void update_parameters(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & Z,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  void update_parameters(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & Z,
+      const std::vector<arma::mat> & W
+  );
+  
+  Rcpp::List save();
   
 };
 

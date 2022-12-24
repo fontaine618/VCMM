@@ -13,7 +13,7 @@ arma::mat rbf_kernel_weight_matrix(
   od.each_col() = t2;
   od.each_row() -= t1;
   
-  od = arma::exp(- arma::square(od) / scale);
+  od = arma::exp(- arma::square(od / scale) ) / scale;
   
   return od;
 }
@@ -113,4 +113,13 @@ VCMMData::VCMMData(
   this->pu = fixed_covariates.n_cols;
   this->q = random_design.n_cols;
   this->nt = t0.n_elem;
+  this->n = response.n_elem;
+  
+}
+
+void VCMMData::update_weights(const double scale){
+  // TODO: you should be able to use this=>t0, this->t
+  for(uint i = 0; i<this->w.size(); i++){
+    this->w[i] = rbf_kernel_weight_matrix(this->t0, this->t[i], scale);
+  }
 }

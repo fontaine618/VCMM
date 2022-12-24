@@ -10,7 +10,7 @@ public:
   
   std::vector<arma::mat> p, w, x, u, z;
   std::vector<arma::colvec> y, t;
-  int px, pu, q, nt;
+  int px, pu, q, nt, n;
   arma::rowvec t0;
   
   VCMMData(
@@ -24,6 +24,8 @@ public:
     const double kernel_scale,
     const double mult
   );
+  
+  void update_weights(const double scale);
   
 };
 

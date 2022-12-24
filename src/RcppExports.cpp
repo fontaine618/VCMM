@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // VCMM
-Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::colvec& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, const double kernel_scale, const double alpha, const double lambda, const uint max_iter, const double mult);
-RcppExport SEXP _VCM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP max_iterSEXP, SEXP multSEXP) {
+Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::colvec& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, double kernel_scale, const uint n_kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const uint max_iter, const double mult);
+RcppExport SEXP _VCM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP kernel_scaleSEXP, SEXP n_kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP max_iterSEXP, SEXP multSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -24,12 +24,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::colvec& >::type vcm_covariates(vcm_covariatesSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type fixed_covariates(fixed_covariatesSEXP);
     Rcpp::traits::input_parameter< const arma::rowvec& >::type estimated_time(estimated_timeSEXP);
-    Rcpp::traits::input_parameter< const double >::type kernel_scale(kernel_scaleSEXP);
+    Rcpp::traits::input_parameter< double >::type kernel_scale(kernel_scaleSEXP);
+    Rcpp::traits::input_parameter< const uint >::type n_kernel_scale(n_kernel_scaleSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double >::type lambda_factor(lambda_factorSEXP);
+    Rcpp::traits::input_parameter< uint >::type n_lambda(n_lambdaSEXP);
     Rcpp::traits::input_parameter< const uint >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double >::type mult(multSEXP);
-    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, kernel_scale, alpha, lambda, max_iter, mult));
+    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, kernel_scale, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, max_iter, mult));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -47,7 +50,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_VCM_VCMM", (DL_FUNC) &_VCM_VCMM, 12},
+    {"_VCM_VCMM", (DL_FUNC) &_VCM_VCMM, 15},
     {"_VCM_to_list_by_subject", (DL_FUNC) &_VCM_to_list_by_subject, 2},
     {NULL, NULL, 0}
 };

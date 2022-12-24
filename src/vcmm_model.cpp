@@ -10,7 +10,8 @@ VCMMModel::VCMMModel(
   const int nt,
   const int q,
   const double alpha,
-  const double lambda
+  const double lambda,
+  const arma::rowvec &t0
 ){
   this->px = px;
   this->pu = pu;
@@ -18,6 +19,10 @@ VCMMModel::VCMMModel(
   this->q = q;
   this->alpha = alpha;
   this->lambda = lambda;
+  this->t0 = t0;
+  
+  this->sig2 = 1.;
+  this->Sigma = arma::eye(q, q);
 
   // initialize coefficients to 0
   arma::mat b(px, nt);
@@ -35,14 +40,33 @@ std::vector<arma::mat> VCMMModel::linear_predictor(
   std::vector<arma::mat> out(X.size());
   arma::mat eta;
   arma::colvec eta2;
-
+  
   for(uint i=0; i<out.size(); i++){
     eta = X[i] * this->b;
     eta2 = U[i] * this->a;
     eta.each_col() += eta2;
     out[i] = eta;
   }
+  
+  return out;
+}
 
+std::vector<arma::colvec> VCMMModel::linear_predictor_at_observed_time(
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W
+){
+  std::vector<arma::colvec> out(X.size());
+  arma::colvec eta;
+  arma::colvec eta2;
+  
+  for(uint i=0; i<out.size(); i++){
+    // TODO: I think this is wrong?
+    eta = arma::sum(X[i] % (W[i] * this->b.t()), 1) / arma::sum(W[i], 1);
+    eta2 = U[i] * this->a;
+    out[i] = eta + eta2;
+  }
+  
   return out;
 }
 
@@ -59,8 +83,75 @@ std::vector<arma::mat> VCMMModel::residuals(
     etai.each_col() -= Y[i];
     R[i] = -etai;
   }
-
+  
   return R;
+}
+
+std::vector<arma::colvec> VCMMModel::residuals_at_observed_time(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W
+){
+  std::vector<arma::colvec> eta(Y.size()), R(Y.size());
+  eta = this->linear_predictor_at_observed_time(X, U, W);
+  
+  for(uint i=0; i<R.size(); i++){
+    R[i] = Y[i] - eta[i];
+  }
+  
+  return R;
+}
+
+std::vector<arma::colvec> VCMMModel::precision_adjusted_residuals(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  std::vector<arma::colvec> R(Y.size());
+  R = this->residuals_at_observed_time(Y, X, U, W);
+  
+  for(uint i=0; i<R.size(); i++){
+    R[i] = P[i] * R[i];
+  }
+  
+  return R;
+}
+
+double VCMMModel::compute_rss(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  double rss = 0.;
+  std::vector<arma::colvec> R = this->residuals_at_observed_time(Y, X, U, W);
+  
+  for(uint i=0; i<R.size(); i++){
+    rss += arma::dot(R[i], P[i] * R[i]);
+  }
+  
+  return rss;
+}
+
+double VCMMModel::compute_parss(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  double parss = 0.;
+  std::vector<arma::colvec> R = this->precision_adjusted_residuals(Y, X, U, W, P);
+  
+  for(uint i=0; i<R.size(); i++){
+    parss += arma::dot(R[i], R[i]);
+  }
+  
+  return parss;
 }
 
 double VCMMModel::loss(
@@ -91,8 +182,8 @@ double VCMMModel::penalty(){
   double penalty;
   double l1, l2;
 
-  l1 = sum(abs(this->b.row(1)));
-  l2 = sum(square(this->b.row(1)));
+  l1 = arma::norm(this->b.row(1), 1);
+  l2 = arma::norm(this->b.row(1), 2);
   penalty = this->alpha * l1 ;
   penalty += (1. - this->alpha) * sqrt(this->nt) * l2;
 
@@ -136,7 +227,6 @@ std::vector<std::vector<arma::mat>> VCMMModel::_hessian_blocks(
   std::vector<arma::mat> hessian_ab(this->nt);
   arma::mat hessian_a(this->pu, this->pu);
   double sw = 0.;
-  Rcpp::Rcout << "1\n";
   
   // initialize to 0
   hessian_a.zeros();
@@ -144,7 +234,6 @@ std::vector<std::vector<arma::mat>> VCMMModel::_hessian_blocks(
     hessian_b[i] = arma::zeros(this->px, this->px);
     hessian_ab[i] = arma::zeros(this->px, this->pu);
   }
-  Rcpp::Rcout << "2\n";
   
   // compute hessian
   for(uint i=0; i<X.size(); i++){
@@ -157,7 +246,6 @@ std::vector<std::vector<arma::mat>> VCMMModel::_hessian_blocks(
       hessian_ab[k] += X[i].t() * M * U[i];
     }
   }
-  Rcpp::Rcout << "3\n";
   
   // divide by total weight
   hessian_a /= sw;
@@ -165,7 +253,6 @@ std::vector<std::vector<arma::mat>> VCMMModel::_hessian_blocks(
     hessian_b[i] /= sw;
     hessian_ab[i] /= sw;
   }
-  Rcpp::Rcout << "4\n";
   
   
   std::vector<std::vector<arma::mat>> out{
@@ -183,12 +270,10 @@ arma::mat VCMMModel::_hessian_from_blocks(
     std::vector<arma::mat> hessian_b,
     std::vector<arma::mat> hessian_ab
 ){
-  Rcpp::Rcout << "5\n";
   uint dim = this->pu + this->nt * this->px;
   arma::mat hessian(dim, dim);
   hessian.zeros();
   
-  Rcpp::Rcout << "6\n";
   hessian.submat(0, 0, this->pu - 1, this->pu - 1) = hessian_a;
   for(uint k=0; k<this->nt; k++){
     hessian.submat(0,
@@ -204,7 +289,6 @@ arma::mat VCMMModel::_hessian_from_blocks(
                    this->pu + (k+1)*this->px - 1,
                    this->pu + (k+1)*this->px - 1) = hessian_b[k];
   }
-  Rcpp::Rcout << "7\n";
   return hessian;
 }
 
@@ -364,17 +448,24 @@ double VCMMModel::compute_lambda_max(
   double m1 = this->alpha * lambda_max * this->Lb;
   double m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max * this->Lb;
   arma::mat b = _proximal_L2(_proximal_L1(b1, m1), m2);
+  uint iter = 0;
   while(arma::norm(b, "inf") < 1.e-10){
+    iter++;
+    if(iter>100){
+      Rcpp::Rcout << "    could not find largest lambda.\n";
+      break;
+    }
     lambda_max *= 0.95;
     m1 = this->alpha * lambda_max * this->Lb;
     m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max * this->Lb;
     b = _proximal_L2(_proximal_L1(b1, m1), m2);
+    
   }
   
   return lambda_max / 0.95; // we went one iteration too far
 }
 
-double VCMMModel::fit(
+void VCMMModel::fit(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
@@ -391,15 +482,95 @@ double VCMMModel::fit(
     this->step(g);
     double loss = this->loss(Y, X, U, W, P);
     double rel_change = 2 * fabs(prev_loss - loss) / fabs(prev_loss + loss);
-    if(iter % 1 == 0) Rcpp::Rcout << 
-      "Iteration " << iter << 
-        " Loss: " << loss << 
-          " momentum: " << this->momentum << 
-            " rel_change: " << rel_change << "\n";
+    if(iter % 10 == 0) Rcpp::Rcout << 
+      "    Iteration " << iter << " Loss: " << loss << " rel_change: " << rel_change << "\n";
     prev_loss = loss;
-    if(rel_change < rel_tol) break;
+    if(rel_change < rel_tol) {
+      Rcpp::Rcout << "    Iteration " << iter << " Loss: " << loss << " rel_change: " << rel_change << " (converged) \n";
+      break;
+    }
   }
-  return prev_loss;
+  this->objective = prev_loss;
+  this->rss = this->compute_rss(Y, X, U, W, P);
+  this->parss = this->compute_parss(Y, X, U, W, P);
 }
 
-// TODO: max_iter and rel_tol as members
+uint VCMMModel::active(){
+  arma::vec nonzero = arma::nonzeros(this->b);
+  return nonzero.n_elem;
+}
+
+
+void VCMMModel::update_parameters(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & Z,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  double parss = this->compute_parss(Y, X, U, W, P);
+  uint n = 0;
+  for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
+  this->sig2 = parss / n;
+  
+  arma::mat Prec(this->q, this->q);
+  Prec.zeros();
+  std::vector<arma::colvec> R = this->residuals_at_observed_time(Y, X, U, W);
+  for(uint i=0; i<Y.size(); i++){
+    arma::mat rtPZ = R[i].t() * P[i] * Z[i];
+    Prec += rtPZ.t() * rtPZ;
+  }
+  Prec /= (Y.size() * this->sig2 * this->sig2);
+  this->Sigma = Prec.i();
+}
+
+
+void VCMMModel::update_parameters(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & Z,
+    const std::vector<arma::mat> & W
+){
+  double parss = 0.;
+  arma::mat Prec = arma::eye(this->q, this->q);
+  uint n = 0;
+  std::vector<arma::colvec> R = this->residuals_at_observed_time(Y, X, U, W);
+  
+  for(uint i=0; i<Y.size(); i++){
+    uint ni = Y[i].n_elem;
+    n += ni;
+    arma::mat Pi = arma::eye(ni, ni);
+    Pi += Z[i] * this->Sigma * Z[i].t() / this->sig2;
+    Pi = Pi.i();
+    arma::colvec Pri = Pi * R[i];
+    parss += arma::dot(Pri, Pri);
+    arma::mat rtPZ = Pri.t() * Z[i];
+    Prec += rtPZ.t() * rtPZ;
+  }
+  this->sig2 = parss / n;
+  Prec /= (Y.size() * this->sig2 * this->sig2);
+  this->Sigma = Prec.i();
+  Rcpp::Rcout << "        sig2=" << this->sig2 << "   Sigma[1,1]=" << this->Sigma[0,0] << "\n";
+}
+
+// TODO: Do a version without P where it is computed from scratch with parameters?
+
+Rcpp::List VCMMModel::save(){
+  return Rcpp::List::create(
+    Rcpp::Named("a", this->a),
+    Rcpp::Named("b", this->b),
+    Rcpp::Named("t0", this->t0),
+    Rcpp::Named("alpha", this->alpha),
+    Rcpp::Named("lambda", this->lambda),
+    Rcpp::Named("objective", this->objective),
+    Rcpp::Named("rss", this->rss),
+    Rcpp::Named("parss", this->parss),
+    Rcpp::Named("penalty", this->penalty()),
+    Rcpp::Named("active", this->active()),
+    Rcpp::Named("sig2", this->sig2),
+    Rcpp::Named("Sigma", this->Sigma),
+    Rcpp::Named("logdetSigma", arma::log_det_sympd(this->Sigma))
+  );
+}
