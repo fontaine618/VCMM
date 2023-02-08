@@ -8,7 +8,7 @@ class VCMMData {
   
 public:
   
-  std::vector<arma::mat> p, w, x, u, z;
+  std::vector<arma::mat> p, w, x, u, z, i;
   std::vector<arma::colvec> y, t;
   int px, pu, q, nt, n;
   arma::rowvec t0;

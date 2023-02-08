@@ -75,6 +75,41 @@ std::vector<arma::colvec> to_list_by_subject(
   return out;
 }
 
+arma::mat compute_interpolation(
+  const arma::colvec & response_time,
+  const arma::rowvec & estimated_time
+){
+  arma::mat out(response_time.n_elem, estimated_time.n_elem);
+  out.zeros();
+  
+  for(uint i=0; i<out.n_rows; i++){
+    double t = response_time[i];
+    // find where t fits in
+    int which = -1;
+    for(uint j=0; j<out.n_cols; j++){
+      if(estimated_time[j] >= t){
+        which = j;
+        break;
+      }
+    }
+    // the two edge cases
+    if(which==out.n_cols){
+      out(i, which) = 1.;
+      continue;
+    }
+    if(which==-1){
+      out(i, 0) = 1.;
+      continue;
+    }
+    // middle case
+    double t0 = estimated_time[which-1];
+    double t1 = estimated_time[which];
+    out(i, which-1) = 1 - (t-t0) / (t1 - t0);
+    out(i, which) = 1 - (t1-t) / (t1 - t0);
+  }
+  return out;
+}
+
 VCMMData::VCMMData(
   const arma::colvec & response, // n x 1 in R
   const arma::ucolvec & subject, // n x 1 in {0, 1, ..., N}
@@ -105,7 +140,7 @@ VCMMData::VCMMData(
   this->z = to_list_by_subject(subject, random_design);
   this->u = to_list_by_subject(subject, fixed_covariates);
   this->x = to_list_by_subject(subject, covariates);
-  
+  this->i = to_list_by_subject(subject, compute_interpolation(response_time, estimated_time));
   this->t0 = estimated_time;
   
   // store dimensions for quick access
@@ -118,7 +153,6 @@ VCMMData::VCMMData(
 }
 
 void VCMMData::update_weights(const double scale){
-  // TODO: you should be able to use this=>t0, this->t
   for(uint i = 0; i<this->w.size(); i++){
     this->w[i] = rbf_kernel_weight_matrix(this->t0, this->t[i], scale);
   }

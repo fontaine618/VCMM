@@ -16,8 +16,8 @@ public:
   int px, pu, q, nt, max_iter;
   double La, Lb, momentum, rel_tol;
   arma::rowvec t0;
-  double objective, rss, parss;
-  double sig2;
+  double objective, rss, parss, pllk, apllk, df_kernel, amllk;
+  double sig2, sig2marginal, sig2profile;
   arma::mat Sigma;
   
   VCMMModel(
@@ -38,7 +38,7 @@ public:
   std::vector<arma::colvec> linear_predictor_at_observed_time(
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & W
+      const std::vector<arma::mat> & I
   );
   
   std::vector<arma::mat> residuals(
@@ -51,14 +51,14 @@ public:
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & W
+      const std::vector<arma::mat> & I
   );
   
   std::vector<arma::colvec> precision_adjusted_residuals(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & P
   );
   
@@ -70,11 +70,35 @@ public:
       const std::vector<arma::mat> & P
   );
   
+  double profile_loglikelihood(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & I,
+      const std::vector<arma::mat> & P
+  );
+  
+  double approximate_profile_loglikelihood(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & I,
+      const std::vector<arma::mat> & P
+  );
+  
+  double approximate_marginal_loglikelihood(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & I,
+      const std::vector<arma::mat> & P
+  );
+  
   double compute_rss(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & P
   );
   
@@ -82,13 +106,15 @@ public:
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & P
   );
   
   double penalty();
   
-  uint active();
+  uint df_vc();
+  
+  double compute_df_kernel(const std::vector<arma::mat> & W);
   
   std::vector<arma::mat> gradients(
       const std::vector<arma::colvec> & Y,
@@ -122,6 +148,10 @@ public:
     const arma::rowvec & b
   );
   
+  std::vector<arma::mat> precision(
+      const std::vector<arma::mat> & Z
+  );
+  
   void step(
       const std::vector<arma::mat> &gradients
   );
@@ -139,6 +169,7 @@ public:
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P,
+      const std::vector<arma::mat> & I,
       uint max_iter,
       double rel_tol
   );
@@ -149,18 +180,21 @@ public:
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P,
+      const std::vector<arma::mat> & I,
       uint max_iter,
       double rel_tol
   );
   
-  
-  void update_parameters(
+
+  void estimate_parameters(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & P,
       const std::vector<arma::mat> & Z,
-      const std::vector<arma::mat> & W,
-      const std::vector<arma::mat> & P
+      const std::vector<arma::mat> & I,
+      const uint max_iter,
+      const double rel_tol
   );
   
   void update_parameters(
@@ -168,7 +202,17 @@ public:
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & Z,
-      const std::vector<arma::mat> & W
+      const std::vector<arma::mat> & I
+  );
+  
+  void compute_statistics(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & Z,
+      const std::vector<arma::mat> & I,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
   );
   
   Rcpp::List save();
