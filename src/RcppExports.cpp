@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // VCMM
-Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::colvec& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, double kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const uint max_iter, const double mult);
-RcppExport SEXP _VCM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP max_iterSEXP, SEXP multSEXP) {
+Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, const std::string tuning_strategy, arma::vec kernel_scale, const double kernel_scale_factor, uint n_kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const uint max_iter, const double mult, const double ebic_factor, const double rel_tol, const uint orthogonal_search_max_rounds, const uint bissection_max_evals);
+RcppExport SEXP _VCMM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP tuning_strategySEXP, SEXP kernel_scaleSEXP, SEXP kernel_scale_factorSEXP, SEXP n_kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP max_iterSEXP, SEXP multSEXP, SEXP ebic_factorSEXP, SEXP rel_tolSEXP, SEXP orthogonal_search_max_roundsSEXP, SEXP bissection_max_evalsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,40 +21,34 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::ucolvec& >::type subject(subjectSEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type response_time(response_timeSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type random_design(random_designSEXP);
-    Rcpp::traits::input_parameter< const arma::colvec& >::type vcm_covariates(vcm_covariatesSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type vcm_covariates(vcm_covariatesSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type fixed_covariates(fixed_covariatesSEXP);
     Rcpp::traits::input_parameter< const arma::rowvec& >::type estimated_time(estimated_timeSEXP);
-    Rcpp::traits::input_parameter< double >::type kernel_scale(kernel_scaleSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type tuning_strategy(tuning_strategySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type kernel_scale(kernel_scaleSEXP);
+    Rcpp::traits::input_parameter< const double >::type kernel_scale_factor(kernel_scale_factorSEXP);
+    Rcpp::traits::input_parameter< uint >::type n_kernel_scale(n_kernel_scaleSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type lambda_factor(lambda_factorSEXP);
     Rcpp::traits::input_parameter< uint >::type n_lambda(n_lambdaSEXP);
     Rcpp::traits::input_parameter< const uint >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double >::type mult(multSEXP);
-    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, kernel_scale, alpha, lambda, lambda_factor, n_lambda, max_iter, mult));
-    return rcpp_result_gen;
-END_RCPP
-}
-// to_list_by_subject
-std::vector<arma::colvec> to_list_by_subject(const arma::uvec& subject, const arma::colvec& array);
-RcppExport SEXP _VCM_to_list_by_subject(SEXP subjectSEXP, SEXP arraySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::uvec& >::type subject(subjectSEXP);
-    Rcpp::traits::input_parameter< const arma::colvec& >::type array(arraySEXP);
-    rcpp_result_gen = Rcpp::wrap(to_list_by_subject(subject, array));
+    Rcpp::traits::input_parameter< const double >::type ebic_factor(ebic_factorSEXP);
+    Rcpp::traits::input_parameter< const double >::type rel_tol(rel_tolSEXP);
+    Rcpp::traits::input_parameter< const uint >::type orthogonal_search_max_rounds(orthogonal_search_max_roundsSEXP);
+    Rcpp::traits::input_parameter< const uint >::type bissection_max_evals(bissection_max_evalsSEXP);
+    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, tuning_strategy, kernel_scale, kernel_scale_factor, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, max_iter, mult, ebic_factor, rel_tol, orthogonal_search_max_rounds, bissection_max_evals));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_VCM_VCMM", (DL_FUNC) &_VCM_VCMM, 14},
-    {"_VCM_to_list_by_subject", (DL_FUNC) &_VCM_to_list_by_subject, 2},
+    {"_VCMM_VCMM", (DL_FUNC) &_VCMM_VCMM, 21},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_VCM(DllInfo *dll) {
+RcppExport void R_init_VCMM(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

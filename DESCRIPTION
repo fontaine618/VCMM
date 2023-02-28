@@ -1,4 +1,4 @@
-Package: VCM
+Package: VCMM
 Type: Package
 Title: What the package does (short line)
 Version: 1.0
@@ -7,5 +7,6 @@ Author: Who wrote it
 Maintainer: Who to complain to <yourfault@somewhere.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
-Imports: Rcpp (>= 1.0.9)
-LinkingTo: Rcpp, RcppArmadillo
+Imports: Rcpp (>= 1.0.9), RcppProgress (>= 0.4.2)
+LinkingTo: Rcpp, RcppArmadillo, RcppProgress
+RoxygenNote: 7.2.3

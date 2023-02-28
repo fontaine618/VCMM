@@ -5,15 +5,15 @@
 [x] Find smallest lambda with 0
 [x] Empirical Bayes to estimated random effects
 [x] Implement solution path starting at lambda max
-[ ] Implement BIC for solution pas
+[x] Implement BIC for solution pas
   - BIC should be -2llk +  vlog(nh)/nh (eq. -2llk <- rss since the other term is contsant, but there be some scaling issue?)
   - Compare to EBIC
   - Can we just take the proxy matrix? Missing scale?
-[ ] Experiemnt with estimation of Sigma, seems wrong for the moment (way to large?)
-[ ] What are the fitted values?
+[x] Experiemnt with estimation of Sigma, seems wrong for the moment (way to large?)
+[x] What are the fitted values?
   - Interpolation (this makes more sense to me)
   - Kernel weighing
-[ ] choose the kernel scale
+[x] choose the kernel scale
   - BIC might not be the best approach since log(nh) can get negative
   - KLasso paper requires h~n^-1/5
   - look at what the properties of log(nh)/(nh) are required? might need to restrict ot the monotonically decreasing part
@@ -26,3 +26,23 @@
   - Bootstrap?
   - variance estimation? Information matrix?
   - Buhlmann & ?? Bootstrap for LASSO (vary lambda, selection frequency; selection stability)
+[ ] R Wrapper
+  [x] Main function
+  [ ] Summary
+  [ ] Coefficients (use best EBIC as default)
+  [ ] Predict
+[ ] Try on real data
+  [ ] maybe transofrm for variance
+
+# Bugs, etc.
+
+[ ] The penalty on beta1 is hard coded for now; could be an argument later
+
+# Notes
+
+- I found a bug in my FISTA algorithm, not it is fixed. This was the cause of some flat curve when we were not expecting it.
+- I think the issue is dividing by the total weight, which will differ with number of timepoints
+- Another reason is the interpolation: we will get the same estimate only if all timepoints are exact for all
+
+- For small number of time points it appears that we do not get monotonicity, even for FISTA.
+- This conincides exactly with when we do not get perfect matches

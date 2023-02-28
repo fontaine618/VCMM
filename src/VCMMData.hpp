@@ -12,13 +12,14 @@ public:
   std::vector<arma::colvec> y, t;
   int px, pu, q, nt, n;
   arma::rowvec t0;
+  double kernel_scale;
   
   VCMMData(
     const arma::colvec & response,
     const arma::ucolvec & subject,
     const arma::colvec & response_time,
     const arma::mat & random_design,
-    const arma::colvec & vcm_covariates,
+    const arma::mat & vcm_covariates,
     const arma::mat & fixed_covariates,
     const arma::rowvec & estimated_time,
     const double kernel_scale,

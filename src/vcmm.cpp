@@ -3,25 +3,43 @@
 #include "VCMMModel.hpp"
 
 // [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::depends(RcppProgress)]]
+#include <progress.hpp>
+#include <progress_bar.hpp>
+#include <map>
 
+std::map<std::string, int> tuning_strategy_to_int{
+  {"grid_search", 0},
+  {"orthogonal_search", 1},
+  {"bisection", 2}
+};
+  
 // [[Rcpp::export()]]
 Rcpp::List VCMM(
     const arma::colvec & response,
     const arma::ucolvec & subject,
     const arma::colvec & response_time,
     const arma::mat & random_design,
-    const arma::colvec & vcm_covariates,
+    const arma::mat & vcm_covariates,
     const arma::mat & fixed_covariates,
     const arma::rowvec & estimated_time,
-    double kernel_scale,
+    const std::string tuning_strategy,
+    arma::vec kernel_scale,
+    const double kernel_scale_factor,
+    uint n_kernel_scale,
     const double alpha,
     arma::vec lambda,
     const double lambda_factor,
     uint n_lambda,
     const uint max_iter,
-    const double mult
+    const double mult,
+    const double ebic_factor,
+    const double rel_tol,
+    const uint orthogonal_search_max_rounds,
+    const uint bissection_max_evals
 ){
   Rcpp::Rcout << "[VCMM] Initializing data and models ...";
+  double h = pow(response.n_elem, -0.2);
   VCMMData data = VCMMData(
     response, 
     subject,
@@ -30,7 +48,7 @@ Rcpp::List VCMM(
     vcm_covariates,
     fixed_covariates,
     estimated_time,
-    kernel_scale,
+    h,
     mult
   );
   VCMMModel model = VCMMModel(
@@ -39,41 +57,52 @@ Rcpp::List VCMM(
     estimated_time.n_elem,
     random_design.n_cols,
     alpha,
-    1e6,
-    estimated_time
+    0.,
+    estimated_time,
+    ebic_factor,
+    rel_tol,
+    max_iter
   );
   Rcpp::Rcout << "done.\n";
   
-  Rcpp::Rcout << "[VCMM] Computing Lipschitz constants ...";
-  model.compute_lipschitz_constants(data.x, data.u, data.w, data.p);
-  Rcpp::Rcout << "done.\n";
-  
-  if(lambda.n_elem == 0){
-    Rcpp::Rcout << "[VCMM] Computing maximum regularization parameter \n";
-    double lambda_max = model.compute_lambda_max(data.y, data.x, data.u, data.w, data.p, data.i, max_iter, 1e-5);
-    lambda = arma::logspace(log10(lambda_max*lambda_factor), log10(lambda_max), n_lambda);
-    Rcpp::Rcout << "       done. (lambda max: " << lambda_max << ")\n";
+  std::vector<Rcpp::List> models;
+  switch(tuning_strategy_to_int[tuning_strategy]){
+  // Orthogonal search
+  case 1: 
+    // implicitly initialized at h
+    // models = model.orthogonal_search(
+    //   data,
+    //   kernel_scale,
+    //   kernel_scale_factor,
+    //   n_kernel_scale,
+    //   lambda,
+    //   lambda_factor,
+    //   n_lambda,
+    //   orthogonal_search_max_rounds
+    // );
+    break;
+  // Bisection
+  case 2:
+    break;
+  // Grid Search (0)
+  default: 
+    // we first compute the range of kernel scale: this depends on h, so we do it outside
+    if(kernel_scale.n_elem == 0){
+      kernel_scale = arma::logspace(log10(h*kernel_scale_factor), log10(h/kernel_scale_factor), n_kernel_scale);
+    }
+    n_kernel_scale = kernel_scale.n_elem;
+    kernel_scale = arma::sort(kernel_scale, "descend");
+    
+    models = model.grid_search(
+      data, 
+      kernel_scale,
+      lambda,
+      lambda_factor,
+      n_lambda
+    );
+    break;
   }
-  lambda = arma::sort(lambda, "descend");
-  n_lambda = lambda.n_elem;
-  std::vector<Rcpp::List> models(n_lambda);
-  
-  for(uint l=0; l<n_lambda; l++){
-    Rcpp::Rcout << "[VCMM] Lambda iteration " << l << " (lambda=" << lambda[l] << ")\n";
-    model.lambda = lambda[l];
-    model.fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter, 1e-5);
-    
-    Rcpp::Rcout << "       Estimating parameters ... \n";
-    model.estimate_parameters(data.y, data.x, data.u, data.p, data.z, data.i, max_iter, 1e-5);
-    Rcpp::Rcout << "       done.\n";
-    
-    Rcpp::Rcout << "       Computing final statistics ... ";
-    model.compute_statistics(data.y, data.x, data.u, data.z, data.i, data.w, data.p);
-    Rcpp::Rcout << "done.\n";
-    
-    models[l] = model.save();
-  }
-  
+
   return Rcpp::List::create(
     Rcpp::Named("models", models)
   );

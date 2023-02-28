@@ -10,24 +10,28 @@
 class VCMMModel {
   
 public:
-  arma::mat b;
-  arma::mat a;
+  arma::mat b, tmpb;
+  arma::mat a, tmpa;
   double alpha, lambda;
-  int px, pu, q, nt, max_iter;
-  double La, Lb, momentum, rel_tol;
+  uint px, pu, q, nt, max_iter;
+  double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
-  double objective, rss, parss, pllk, apllk, df_kernel, amllk;
+  double objective, rss, parss, pllk, apllk, df_kernel, amllk, bic, ebic;
   double sig2, sig2marginal, sig2profile;
   arma::mat Sigma;
+  double ebic_factor;
   
   VCMMModel(
-    const int px,
-    const int pu,
-    const int nt,
-    const int q,
+    const uint px,
+    const uint pu,
+    const uint nt,
+    const uint q,
     const double alpha,
     const double lambda,
-    const arma::rowvec &t0
+    const arma::rowvec &t0,
+    const double ebic_factor,
+    const double rel_tol,
+    const uint max_iter
   );
   
   std::vector<arma::mat> linear_predictor(
@@ -124,6 +128,39 @@ public:
       const std::vector<arma::mat> & P
   );
   
+  void backtracking_accelerated_proximal_gradient_step(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P,
+      const double previous_obj
+  );
+  
+  void accelerated_proximal_gradient_step(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  void monotone_accelerated_proximal_gradient_step(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  void proximal_gradient_step(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
   std::vector<std::vector<arma::mat>> _hessian_blocks (
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
@@ -145,15 +182,21 @@ public:
   );
   
   arma::rowvec proximal(
-    const arma::rowvec & b
+      const arma::rowvec & b
   );
   
+  arma::rowvec proximal_L1(
+      const arma::rowvec & b,
+      const double m
+  );
+
+  arma::rowvec proximal_L2(
+      const arma::rowvec & s,
+      const double m
+  );
+
   std::vector<arma::mat> precision(
       const std::vector<arma::mat> & Z
-  );
-  
-  void step(
-      const std::vector<arma::mat> &gradients
   );
   
   void compute_lipschitz_constants(
@@ -170,8 +213,7 @@ public:
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P,
       const std::vector<arma::mat> & I,
-      uint max_iter,
-      double rel_tol
+      uint max_iter
   );
   
   void fit(
@@ -181,8 +223,7 @@ public:
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P,
       const std::vector<arma::mat> & I,
-      uint max_iter,
-      double rel_tol
+      uint max_iter
   );
   
 
@@ -193,16 +234,7 @@ public:
       const std::vector<arma::mat> & P,
       const std::vector<arma::mat> & Z,
       const std::vector<arma::mat> & I,
-      const uint max_iter,
-      const double rel_tol
-  );
-  
-  void update_parameters(
-      const std::vector<arma::colvec> & Y,
-      const std::vector<arma::mat> & X,
-      const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & Z,
-      const std::vector<arma::mat> & I
+      const uint max_iter
   );
   
   void compute_statistics(
@@ -212,10 +244,35 @@ public:
       const std::vector<arma::mat> & Z,
       const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & W,
-      const std::vector<arma::mat> & P
+      const std::vector<arma::mat> & P,
+      const double kernel_scale
+  );
+  
+  void compute_ics(
+    const uint n,
+    const double h
   );
   
   Rcpp::List save();
+  
+  std::vector<Rcpp::List> grid_search(
+      VCMMData data,
+      arma::vec kernel_scale,
+      arma::vec lambda,
+      const double lambda_factor,
+      uint n_lambda
+  );
+  
+  std::vector<Rcpp::List> orthogonal_search(
+      VCMMData data,
+      arma::vec kernel_scale,
+      const double kernel_scale_factor,
+      uint n_kernel_scale,
+      arma::vec lambda,
+      const double lambda_factor,
+      uint n_lambda,
+      uint max_tounds
+  );
   
 };
 
