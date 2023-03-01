@@ -118,7 +118,9 @@ public:
   
   uint df_vc();
   
-  double compute_df_kernel(const std::vector<arma::mat> & W);
+  arma::rowvec active();
+  arma::rowvec effective_sample_size(const std::vector<arma::mat> & W, double kernel_scale);
+  double compute_df_kernel(const std::vector<arma::mat> & W, double kernel_scale);
   
   std::vector<arma::mat> gradients(
       const std::vector<arma::colvec> & Y,
@@ -285,14 +287,16 @@ public:
       arma::vec kernel_scale,
       arma::vec lambda,
       arma::uvec restart,
-      VCMMData test
+      VCMMData test,
+      const std::vector<Rcpp::List> & models
   );
   
   std::vector<Rcpp::List> path(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
-      arma::uvec restart
+      arma::uvec restart,
+      const std::vector<Rcpp::List> & models
   );
   
   std::vector<Rcpp::List> orthogonal_search(

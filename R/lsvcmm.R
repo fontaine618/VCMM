@@ -28,6 +28,9 @@ lsvcmm = function(
   tuning_strategy=c("grid_search", "orthogonal_search", "bisection"),
   ebic_factor=1.,
   
+  # cross-validation
+  cv=NULL,
+  
   # parameters
   control=lsvcmm_control()
 ){
@@ -131,6 +134,11 @@ lsvcmm = function(
   tuning_strategy = match.arg(tuning_strategy)
   stopifnot(ebic_factor>=0)
   
+  # TUNING PREPARATION
+  if(is.null(cv)) cv = 0
+  if(cv == -1) cv = length(subject_ids) - 1  # LOO
+  
+  
   # CALL
   obj = VCMM(
     response=y, 
@@ -153,7 +161,8 @@ lsvcmm = function(
     ebic_factor=ebic_factor,
     rel_tol=control[["rel_tol"]],
     orthogonal_search_max_rounds=control[["orthogonal_search_max_rounds"]],
-    bissection_max_evals=control[["bissection_max_evals"]]
+    bissection_max_evals=control[["bissection_max_evals"]],
+    nfolds=cv
   )
   
   # SUMMARIZE RESULTS

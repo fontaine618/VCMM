@@ -498,19 +498,38 @@ uint VCMMModel::df_vc(){
   return arma::accu(this->b != 0.);
 }
 
-double VCMMModel::compute_df_kernel(
-    const std::vector<arma::mat> & W
-){
-  double df = 0.;
+arma::rowvec VCMMModel::active(){
+  arma::rowvec df(this->nt, arma::fill::zeros);
   for(uint s=0; s<this->nt; s++){
-    uint nactive = arma::accu(this->b.col(s) != 0.);
-    double sw = 0.;
-    for(uint i=0; i<W.size(); i++){
-      sw += arma::accu(W[i].col(s));
-    }
-    df += nactive / sw;
+    df[s] = arma::accu(this->b.col(s) != 0.);
   }
   return df;
+}
+
+arma::rowvec VCMMModel::effective_sample_size(
+    const std::vector<arma::mat> & W, 
+    double kernel_scale
+){
+  // TODO: this assumes k(0) = 1
+  arma::rowvec n(this->nt, arma::fill::zeros);
+  for(uint i = 0; i < W.size(); i++){
+    n += arma::sum(W[i], 0); // W[i] is ni x nt, dim=0 takes colsum
+  }
+  n *= kernel_scale; 
+  return n;
+}
+
+double VCMMModel::compute_df_kernel(
+    const std::vector<arma::mat> & W, 
+    double kernel_scale
+){
+  arma::rowvec n = this->effective_sample_size(W, kernel_scale);
+  arma::rowvec df = this->active(); 
+  // for now, we assume 1/T as the contribution of each time point, 
+  // we also assume k(0)=1
+  double range = this->t0.max() - this->t0.min();
+  double df_kernel = arma::dot(arma::log(n), df) * range / (this->nt * kernel_scale);
+  return df_kernel;
 }
 
 

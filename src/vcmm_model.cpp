@@ -62,11 +62,11 @@ double VCMMModel::compute_lambda_max(
   double lambda_max = -1e10;
   // L1 bound
   if(this->alpha > 0.){
-    lambda_max = fmax(lambda_max, b1norminf  * this->Lb/ this->alpha);
+    lambda_max = fmax(lambda_max, b1norminf  * this->Lb / this->alpha);
   }
   // L2 bound
   if(this->alpha < 1.){
-    lambda_max = fmax(lambda_max, this->Lb * b1norm2 / (sqrt(this->nt) * (1. - this->alpha)));
+    lambda_max = fmax(lambda_max, this->Lb * b1norm2 / (this->alpha + (1-this->alpha) * sqrt(this->nt)));
   }
   // this will overshoot a bit possibly, so we decrease until a prox update would be nonzero and backtrack one step
   double m1 = this->alpha * lambda_max / this->Lb;
@@ -76,17 +76,14 @@ double VCMMModel::compute_lambda_max(
   double mult = 0.95; // we should end up within 5% of the tightest bound
   while(arma::norm(b, "inf") < 1.e-10){
     iter++;
-    if(iter>100){
-      Rcpp::Rcout << "    could not find smallest lambda with completely sparse solution.\n";
-      break;
-    }
+    if(iter>100) break;
     lambda_max *= mult;
-    m1 = this->alpha * lambda_max * this->Lb;
-    m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max * this->Lb;
+    m1 = this->alpha * lambda_max / this->Lb;
+    m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max / this->Lb;
     b = proximal_L2(proximal_L1(b1, m1), m2);
-    
   }
-  return lambda_max / mult; // we went one iteration too far
+  if(iter > 0) lambda_max /= mult;// we went one iteration too far
+  return lambda_max; 
 }
 
 void VCMMModel::fit(
@@ -141,7 +138,7 @@ void VCMMModel::compute_statistics(
   this->parss = this->compute_parss(Y, X, U, I, P);
   this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
   this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
-  this->df_kernel = this->compute_df_kernel(W);
+  this->df_kernel = this->compute_df_kernel(W, kernel_scale);
   
   uint n = 0;
   for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
@@ -187,8 +184,8 @@ void VCMMModel::estimate_parameters(
 
 Rcpp::List VCMMModel::save(){
   return Rcpp::List::create(
-    Rcpp::Named("a", this->a),
-    Rcpp::Named("b", this->b),
+    Rcpp::Named<arma::mat>("a", this->a),
+    Rcpp::Named<arma::mat>("b", this->b),
     Rcpp::Named("t0", this->t0),
     Rcpp::Named("alpha", this->alpha),
     Rcpp::Named("lambda", this->lambda),
@@ -207,4 +204,3 @@ Rcpp::List VCMMModel::save(){
     Rcpp::Named("predparss", this->predparss)
   );
 }
-

@@ -36,7 +36,8 @@ Rcpp::List VCMM(
     const double ebic_factor,
     const double rel_tol,
     const uint orthogonal_search_max_rounds,
-    const uint bissection_max_evals
+    const uint bissection_max_evals,
+    const uint nfolds 
 ){
   Rcpp::Rcout << "[VCMM] Initializing data and models ...";
   double h = pow(response.n_elem, -0.2);
@@ -105,37 +106,37 @@ Rcpp::List VCMM(
   }
   
   // CV: maybe move this inside switch
-  uint nfolds = 7;
-  
-  data.prepare_folds(nfolds);
-  // need to find all the lambdas
-  arma::vec fitted_lambdas(models.size());
-  for(uint m=0; m<models.size(); m++) fitted_lambdas[m] = models[m]["lambda"];
-  arma::vec fitted_hs(models.size());
-  for(uint m=0; m<models.size(); m++) fitted_hs[m] = models[m]["kernel_scale"];
-  // Sequencing is
-  // [h0, ..., h0, h1, ..., h1, ..., hn, ..., hn]
-  // [l00, ..., l0n, l10, ..., l1n, ..., lm0, ..., lmn]
-  // Need to compute indicator for restarts when new h to 
-  arma::uvec restart(models.size(), arma::fill::zeros);
-  restart[0] = 1;
-  for(uint m=0; m<models.size()-1; m++){
-    if(fitted_hs[m]!=fitted_hs[m+1]) restart[m+1] = 1;
+  if(nfolds > 0){
+    data.prepare_folds(nfolds);
+    // need to find all the lambdas
+    arma::vec fitted_lambdas(models.size());
+    for(uint m=0; m<models.size(); m++) fitted_lambdas[m] = models[m]["lambda"];
+    arma::vec fitted_hs(models.size());
+    for(uint m=0; m<models.size(); m++) fitted_hs[m] = models[m]["kernel_scale"];
+    // Sequencing is
+    // [h0, ..., h0, h1, ..., h1, ..., hn, ..., hn]
+    // [l00, ..., l0n, l10, ..., l1n, ..., lm0, ..., lmn]
+    // Need to compute indicator for restarts when new h to 
+    arma::uvec restart(models.size(), arma::fill::zeros);
+    restart[0] = 1;
+    for(uint m=0; m<models.size()-1; m++){
+      if(fitted_hs[m]!=fitted_hs[m+1]) restart[m+1] = 1;
+    }
+    // arma::join_rows(fitted_lambdas, fitted_hs, restart).print();
+    
+    arma::vec predparss(models.size(), arma::fill::zeros);
+    for(uint fold = 0; fold<nfolds; fold++){
+      Rcpp::Rcout << "[VCMM] CV fold " << fold+1 << "/" << nfolds << "\n";
+      VCMMData train = data.get_other_folds(fold);
+      VCMMData test = data.get_fold(fold);
+      std::vector<Rcpp::List> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test, models);
+      for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m]["predparss"];
+    }
+    for(uint m=0; m<predparss.n_elem; m++) models[m]["predparss"] = predparss[m];
   }
-  // arma::join_rows(fitted_lambdas, fitted_hs, restart).print();
   
-  arma::vec predparss(models.size(), arma::fill::zeros);
-  for(uint fold = 0; fold<nfolds; fold++){
-    Rcpp::Rcout << "[VCMM] CV fold " << fold+1 << "/" << nfolds << "\n";
-    VCMMData train = data.get_other_folds(fold);
-    VCMMData test = data.get_fold(fold);
-    std::vector<Rcpp::List> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test);
-    for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m]["predparss"];
-  }
-  for(uint m=0; m<predparss.n_elem; m++) models[m]["predparss"] = predparss[m];
   
   return Rcpp::List::create(
-    Rcpp::Named("models", models),
-    Rcpp::Named("cv", 0.)
+    Rcpp::Named("models", models)
   );
 }

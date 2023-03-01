@@ -99,14 +99,15 @@ std::vector<Rcpp::List> VCMMModel::path(
     arma::vec kernel_scale,
     arma::vec lambda,
     arma::uvec restart,
-    VCMMData test
+    VCMMData test,
+    const std::vector<Rcpp::List> & models = std::vector<Rcpp::List>()
 ){
   this->a.zeros();
   this->b.zeros();
   arma::mat prev_a = this->a * 0.;
   arma::mat prev_b = this->b * 0.;
   uint n_models = kernel_scale.n_elem;
-  std::vector<Rcpp::List> models(n_models);
+  std::vector<Rcpp::List> cvmodels(n_models);
   Rcpp::Rcout << "[VCMM] Starting path (" << n_models << " models) ... \n";
   Progress pbar(n_models);
   
@@ -119,6 +120,11 @@ std::vector<Rcpp::List> VCMMModel::path(
       test.update_weights(kernel_scale[k]);
       this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
     }
+    if(models.size() > 0){ 
+      // initialize at the full model estimates to speed things up!
+      // this->a = (arma::mat)models[k]["a"];
+      // this->b = (arma::mat)models[k]["b"];
+    }
     this->lambda = lambda[k];
     this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
     this->estimate_parameters(data.y, data.x, data.u, data.p, data.z, data.i, max_iter);
@@ -127,7 +133,7 @@ std::vector<Rcpp::List> VCMMModel::path(
     Rcpp::List submodel = this->save();
     submodel["kernel_scale"] = data.kernel_scale;
     pbar.increment();
-    models[k] = submodel;
+    cvmodels[k] = submodel;
     if(k<n_models - 1){
       if(restart[k+1]==1){
         prev_a = this->a;
@@ -138,14 +144,15 @@ std::vector<Rcpp::List> VCMMModel::path(
   }
   Rcpp::Rcout << "       ... done.\n";
   
-  return models;
+  return cvmodels;
 }
 
 std::vector<Rcpp::List> VCMMModel::path(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
-    arma::uvec restart
+    arma::uvec restart,
+    const std::vector<Rcpp::List> & models = std::vector<Rcpp::List>()
 ){
-  return this->path(data, kernel_scale, lambda, restart, data);
+  return this->path(data, kernel_scale, lambda, restart, data, models);
 }
