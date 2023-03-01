@@ -62,15 +62,15 @@ double VCMMModel::compute_lambda_max(
   double lambda_max = -1e10;
   // L1 bound
   if(this->alpha > 0.){
-    lambda_max = fmax(lambda_max, b1norminf / (this->Lb * this->alpha));
+    lambda_max = fmax(lambda_max, b1norminf  * this->Lb/ this->alpha);
   }
   // L2 bound
   if(this->alpha < 1.){
-    lambda_max = fmax(lambda_max, b1norm2 / (this->Lb * sqrt(this->nt) * (1. - this->alpha)));
+    lambda_max = fmax(lambda_max, this->Lb * b1norm2 / (sqrt(this->nt) * (1. - this->alpha)));
   }
   // this will overshoot a bit possibly, so we decrease until a prox update would be nonzero and backtrack one step
-  double m1 = this->alpha * lambda_max * this->Lb;
-  double m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max * this->Lb;
+  double m1 = this->alpha * lambda_max / this->Lb;
+  double m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max / this->Lb;
   arma::mat b = proximal_L2(proximal_L1(b1, m1), m2);
   uint iter = 0;
   double mult = 0.95; // we should end up within 5% of the tightest bound
@@ -148,6 +148,16 @@ void VCMMModel::compute_statistics(
   this->compute_ics(n, kernel_scale);
 }
 
+void VCMMModel::compute_test_statistics(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & I,
+    const std::vector<arma::mat> & P
+){
+  this->predparss = this->compute_parss(Y, X, U, I, P);
+}
+
 
 void VCMMModel::estimate_parameters(
     const std::vector<arma::colvec> & Y,
@@ -193,7 +203,8 @@ Rcpp::List VCMMModel::save(){
     Rcpp::Named("penalty", this->penalty()),
     Rcpp::Named("df_vc", this->df_vc()),
     Rcpp::Named("df_kernel", this->df_kernel),
-    Rcpp::Named("sig2", this->sig2)
+    Rcpp::Named("sig2", this->sig2),
+    Rcpp::Named("predparss", this->predparss)
   );
 }
 

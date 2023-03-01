@@ -16,7 +16,7 @@ public:
   uint px, pu, q, nt, max_iter;
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
-  double objective, rss, parss, pllk, apllk, df_kernel, amllk, bic, ebic;
+  double objective, rss, parss, pllk, apllk, df_kernel, amllk, bic, ebic, predparss;
   double sig2, sig2marginal, sig2profile;
   arma::mat Sigma;
   double ebic_factor;
@@ -248,6 +248,14 @@ public:
       const double kernel_scale
   );
   
+  void compute_test_statistics(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & I,
+      const std::vector<arma::mat> & P
+  );
+  
   void compute_ics(
     const uint n,
     const double h
@@ -260,7 +268,31 @@ public:
       arma::vec kernel_scale,
       arma::vec lambda,
       const double lambda_factor,
+      uint n_lambda,
+      VCMMData test
+  );
+  
+  std::vector<Rcpp::List> grid_search(
+      VCMMData data,
+      arma::vec kernel_scale,
+      arma::vec lambda,
+      const double lambda_factor,
       uint n_lambda
+  );
+  
+  std::vector<Rcpp::List> path(
+      VCMMData data,
+      arma::vec kernel_scale,
+      arma::vec lambda,
+      arma::uvec restart,
+      VCMMData test
+  );
+  
+  std::vector<Rcpp::List> path(
+      VCMMData data,
+      arma::vec kernel_scale,
+      arma::vec lambda,
+      arma::uvec restart
   );
   
   std::vector<Rcpp::List> orthogonal_search(

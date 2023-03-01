@@ -425,9 +425,9 @@ void VCMMModel::compute_lipschitz_constants(
     minevalHmLI = eigval.min();
     // Rcpp::Rcout << iter << " minevalHmLI: " << minevalHmLI << "\n";
   }
-  Rcpp::Rcout << " (" << iter << " iterations) ";
-  arma::eig_sym(eigval, hessian);
-  Rcpp::Rcout << " (min eval=" << eigval.min() << ") ";
+  // Rcpp::Rcout << " (" << iter << " iterations) ";
+  // arma::eig_sym(eigval, hessian);
+  // Rcpp::Rcout << " (min eval=" << eigval.min() << ") ";
   // // overwrite everything to just largest eigenvalue of the hessian:
   // arma::eig_sym(eigval, hessian);
   // double L = eigval.max();

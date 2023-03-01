@@ -13,7 +13,8 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
     arma::vec kernel_scale,
     arma::vec lambda,
     const double lambda_factor,
-    uint n_lambda
+    uint n_lambda,
+    VCMMData test
 ){
   arma::mat prev_a = this->a * 0.;
   arma::mat prev_b = this->b * 0.;
@@ -31,6 +32,7 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
     double h = kernel_scale[k];
     Rcpp::Rcout << "[VCMM] Setting kernel scale to " << h << " (Iteration " << k+1 << "/" << n_kernel_scale << ")...";
     data.update_weights(h);
+    test.update_weights(h);
     Rcpp::Rcout << "done.\n";
     
     Rcpp::Rcout << "[VCMM] Computing Lipschitz constants ...";
@@ -54,7 +56,7 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
       this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
       this->estimate_parameters(data.y, data.x, data.u, data.p, data.z, data.i, max_iter);
       this->compute_statistics(data.y, data.x, data.u, data.z, data.i, data.w, data.p, data.kernel_scale);
-      
+      this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
       Rcpp::List submodel = this->save();
       submodel["kernel_scale"] = data.kernel_scale;
       if(l==0){
@@ -72,3 +74,78 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
   return models;
 }
 
+std::vector<Rcpp::List> VCMMModel::grid_search(
+    VCMMData data,
+    arma::vec kernel_scale,
+    arma::vec lambda,
+    const double lambda_factor,
+    uint n_lambda
+){
+  return this->grid_search(
+    data,
+    kernel_scale,
+    lambda, 
+    lambda_factor, 
+    n_lambda, 
+    data
+  );
+}
+
+
+
+
+std::vector<Rcpp::List> VCMMModel::path(
+    VCMMData data,
+    arma::vec kernel_scale,
+    arma::vec lambda,
+    arma::uvec restart,
+    VCMMData test
+){
+  this->a.zeros();
+  this->b.zeros();
+  arma::mat prev_a = this->a * 0.;
+  arma::mat prev_b = this->b * 0.;
+  uint n_models = kernel_scale.n_elem;
+  std::vector<Rcpp::List> models(n_models);
+  Rcpp::Rcout << "[VCMM] Starting path (" << n_models << " models) ... \n";
+  Progress pbar(n_models);
+  
+  for(uint k=0; k<n_models; k++){
+    // warmstart to largest lambda from last iteration
+    if(restart[k]==1){
+      this->a = prev_a;
+      this->b = prev_b;
+      data.update_weights(kernel_scale[k]);
+      test.update_weights(kernel_scale[k]);
+      this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
+    }
+    this->lambda = lambda[k];
+    this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
+    this->estimate_parameters(data.y, data.x, data.u, data.p, data.z, data.i, max_iter);
+    this->compute_statistics(data.y, data.x, data.u, data.z, data.i, data.w, data.p, data.kernel_scale);
+    this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
+    Rcpp::List submodel = this->save();
+    submodel["kernel_scale"] = data.kernel_scale;
+    pbar.increment();
+    models[k] = submodel;
+    if(k<n_models - 1){
+      if(restart[k+1]==1){
+        prev_a = this->a;
+        prev_b = this->b;
+      }
+    }
+  
+  }
+  Rcpp::Rcout << "       ... done.\n";
+  
+  return models;
+}
+
+std::vector<Rcpp::List> VCMMModel::path(
+    VCMMData data,
+    arma::vec kernel_scale,
+    arma::vec lambda,
+    arma::uvec restart
+){
+  return this->path(data, kernel_scale, lambda, restart, data);
+}

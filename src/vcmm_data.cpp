@@ -150,7 +150,40 @@ VCMMData::VCMMData(
   this->q = random_design.n_cols;
   this->nt = t0.n_elem;
   this->n = response.n_elem;
-  
+  this->N = y.size();
+}
+
+VCMMData::VCMMData(
+  const std::vector<arma::colvec> & y,
+  const std::vector<arma::colvec> & t,
+  const std::vector<arma::mat> & z,
+  const std::vector<arma::mat> & x,
+  const std::vector<arma::mat> & u,
+  const std::vector<arma::mat> & p,
+  const std::vector<arma::mat> & i,
+  const std::vector<arma::mat> & w,
+  const arma::rowvec & t0,
+  const double kernel_scale
+){
+  // this constructor is to ease the get method for CV
+  this->kernel_scale = kernel_scale;
+  this->w = w;
+  this->p = p;
+  this->y = y;
+  this->t = t;
+  this->z = z;
+  this->u = u;
+  this->x = x;
+  this->i = i;
+  this->t0 = t0;
+  this->px = x[0].n_cols;
+  this->pu = u[0].n_cols;
+  this->q = z[0].n_cols;
+  this->nt = t0.n_elem;
+  this->N = y.size();
+  uint n = 0;
+  for(uint i=0; i<y.size(); i++) n += y[i].n_elem;
+  this->n = n;
 }
 
 // To change the weights without reinitializing an object altogether
@@ -159,4 +192,55 @@ void VCMMData::update_weights(const double scale){
   for(uint i = 0; i<this->w.size(); i++){
     this->w[i] = rbf_kernel_weight_matrix(this->t0, this->t[i], scale);
   }
+}
+
+void VCMMData::prepare_folds(uint nfolds){
+  arma::uvec order = arma::randperm(this->N);
+  uint N_per_fold = this->N / nfolds;
+  arma::uvec foldid(this->N);
+  uint N_in_current_fold = 0;
+  uint current_fold = 0;
+  for(uint i=0; i<this->N; i++){
+    // NB last fold may be bigger/smaller than firsts
+    if(N_in_current_fold>=N_per_fold && current_fold<nfolds-1){
+      current_fold ++;
+      N_in_current_fold = 0;
+    }
+    foldid[order[i]] = current_fold;
+    N_in_current_fold++;
+  }
+  this->foldid = foldid;
+}
+
+VCMMData VCMMData::get(arma::uvec ids){
+  N = ids.n_elem;
+  std::vector<arma::colvec> y(N);
+  std::vector<arma::colvec> t(N);
+  std::vector<arma::mat> z(N);
+  std::vector<arma::mat> x(N);
+  std::vector<arma::mat> u(N);
+  std::vector<arma::mat> p(N);
+  std::vector<arma::mat> ii(N);
+  std::vector<arma::mat> w(N);
+  for(uint i=0; i<N; i++){
+    y[i] = this->y[ids[i]];
+    t[i] = this->t[ids[i]];
+    z[i] = this->z[ids[i]];
+    x[i] = this->x[ids[i]];
+    u[i] = this->u[ids[i]];
+    p[i] = this->p[ids[i]];
+    ii[i] = this->i[ids[i]];
+    w[i] = this->w[ids[i]];
+  }
+  return VCMMData(y, t, z, x, u, p, ii, w, this->t0, this->kernel_scale);
+}
+
+VCMMData VCMMData::get_fold(uint fold){
+  arma::uvec ids = arma::find(this->foldid == fold);
+  return this->get(ids);
+}
+
+VCMMData VCMMData::get_other_folds(uint fold){
+  arma::uvec ids = arma::find(this->foldid != fold);
+  return this->get(ids);
 }

@@ -170,7 +170,8 @@ lsvcmm = function(
     apllk=sapply(obj$models, function(model) model$apllk),
     amllk=sapply(obj$models, function(model) model$amllk),
     bic=sapply(obj$models, function(model) model$bic),
-    ebic=sapply(obj$models, function(model) model$ebic)
+    ebic=sapply(obj$models, function(model) model$ebic),
+    predparss=sapply(obj$models, function(model) model$predparss)
   )
   best_idx = which.min(models_path$ebic)
   

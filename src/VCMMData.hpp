@@ -10,9 +10,10 @@ public:
   
   std::vector<arma::mat> p, w, x, u, z, i;
   std::vector<arma::colvec> y, t;
-  int px, pu, q, nt, n;
+  int px, pu, q, nt, n, N;
   arma::rowvec t0;
   double kernel_scale;
+  arma::uvec foldid;
   
   VCMMData(
     const arma::colvec & response,
@@ -26,7 +27,28 @@ public:
     const double mult
   );
   
+  VCMMData(
+    const std::vector<arma::colvec> & y,
+    const std::vector<arma::colvec> & t,
+    const std::vector<arma::mat> & z,
+    const std::vector<arma::mat> & x,
+    const std::vector<arma::mat> & u,
+    const std::vector<arma::mat> & p,
+    const std::vector<arma::mat> & i,
+    const std::vector<arma::mat> & w,
+    const arma::rowvec & t0,
+    const double kernel_scale
+  );
+  
   void update_weights(const double scale);
+  
+  void prepare_folds(uint nfolds);
+  
+  VCMMData get(arma::uvec ids);
+  
+  VCMMData get_fold(uint fold);
+  
+  VCMMData get_other_folds(uint fold);
   
 };
 
