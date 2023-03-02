@@ -1,6 +1,7 @@
 #include "RcppArmadillo.h"
 #include "VCMMData.hpp"
 #include "VCMMModel.hpp"
+#include "VCMMSavedModel.hpp"
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
@@ -67,7 +68,7 @@ Rcpp::List VCMM(
   );
   Rcpp::Rcout << "done.\n";
   
-  std::vector<Rcpp::List> models;
+  std::vector<VCMMSavedModel> models;
   switch(tuning_strategy_to_int[tuning_strategy]){
   // Orthogonal search
   case 1: 
@@ -110,9 +111,9 @@ Rcpp::List VCMM(
     data.prepare_folds(nfolds);
     // need to find all the lambdas
     arma::vec fitted_lambdas(models.size());
-    for(uint m=0; m<models.size(); m++) fitted_lambdas[m] = models[m]["lambda"];
+    for(uint m=0; m<models.size(); m++) fitted_lambdas[m] = models[m].lambda;
     arma::vec fitted_hs(models.size());
-    for(uint m=0; m<models.size(); m++) fitted_hs[m] = models[m]["kernel_scale"];
+    for(uint m=0; m<models.size(); m++) fitted_hs[m] = models[m].kernel_scale;
     // Sequencing is
     // [h0, ..., h0, h1, ..., h1, ..., hn, ..., hn]
     // [l00, ..., l0n, l10, ..., l1n, ..., lm0, ..., lmn]
@@ -129,14 +130,15 @@ Rcpp::List VCMM(
       Rcpp::Rcout << "[VCMM] CV fold " << fold+1 << "/" << nfolds << "\n";
       VCMMData train = data.get_other_folds(fold);
       VCMMData test = data.get_fold(fold);
-      std::vector<Rcpp::List> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test, models);
-      for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m]["predparss"];
+      std::vector<VCMMSavedModel> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test, models);
+      for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m].predparss;
     }
-    for(uint m=0; m<predparss.n_elem; m++) models[m]["predparss"] = predparss[m];
+    for(uint m=0; m<predparss.n_elem; m++) models[m].predparss = predparss[m];
   }
   
-  
+  std::vector<Rcpp::List> models_list(models.size());
+  for(uint m=0; m<models.size(); m++) models_list[m] = models[m].to_RcppList();
   return Rcpp::List::create(
-    Rcpp::Named("models", models)
+    Rcpp::Named("models", models_list)
   );
 }

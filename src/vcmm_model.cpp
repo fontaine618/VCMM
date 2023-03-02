@@ -1,5 +1,6 @@
 #include "RcppArmadillo.h"
 #include "VCMMModel.hpp"
+#include "VCMMSavedModel.hpp"
 #include <math.h>
 
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -182,25 +183,27 @@ void VCMMModel::estimate_parameters(
   this->sig2 = this->sig2marginal;
 }
 
-Rcpp::List VCMMModel::save(){
-  return Rcpp::List::create(
-    Rcpp::Named<arma::mat>("a", this->a),
-    Rcpp::Named<arma::mat>("b", this->b),
-    Rcpp::Named("t0", this->t0),
-    Rcpp::Named("alpha", this->alpha),
-    Rcpp::Named("lambda", this->lambda),
-    Rcpp::Named("objective", this->objective),
-    Rcpp::Named("apllk", this->apllk),
-    Rcpp::Named("amllk", this->amllk),
-    Rcpp::Named("bic", this->bic),
-    Rcpp::Named("ebic", this->ebic),
-    Rcpp::Named("ebic_factor", this->ebic_factor),
-    Rcpp::Named("rss", this->rss),
-    Rcpp::Named("parss", this->parss),
-    Rcpp::Named("penalty", this->penalty()),
-    Rcpp::Named("df_vc", this->df_vc()),
-    Rcpp::Named("df_kernel", this->df_kernel),
-    Rcpp::Named("sig2", this->sig2),
-    Rcpp::Named("predparss", this->predparss)
+VCMMSavedModel VCMMModel::save(){
+  return VCMMSavedModel(
+    this->a,
+    this->b,
+    this->t0,
+    this->alpha,
+    this->lambda,
+    this->ebic_factor,
+    this->objective,
+    this->apllk,
+    this->amllk,
+    this->bic,
+    this->ebic,
+    this->rss,
+    this->parss,
+    this->predparss,
+    this->penalty(),
+    this->df_vc(),
+    this->df_kernel,
+    this->sig2,
+    this->kernel_scale
   );
 }
+

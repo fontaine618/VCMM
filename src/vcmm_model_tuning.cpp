@@ -1,5 +1,6 @@
 #include "RcppArmadillo.h"
 #include "VCMMModel.hpp"
+#include "VCMMSavedModel.hpp"
 #include "VCMMData.hpp"
 #include <math.h>
 // [[Rcpp::depends(RcppArmadillo)]]
@@ -8,7 +9,7 @@
 #include <progress_bar.hpp>
 
 
-std::vector<Rcpp::List> VCMMModel::grid_search(
+std::vector<VCMMSavedModel> VCMMModel::grid_search(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
@@ -21,7 +22,7 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
   
   if(lambda_factor<=0) n_lambda = lambda.n_elem;
   uint n_kernel_scale = kernel_scale.n_elem;
-  std::vector<Rcpp::List> models(n_kernel_scale*n_lambda);
+  std::vector<VCMMSavedModel> models(n_kernel_scale*n_lambda);
   uint n_models = 0;
   
   for(uint k=0; k<n_kernel_scale; k++){
@@ -57,8 +58,8 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
       this->estimate_parameters(data.y, data.x, data.u, data.p, data.z, data.i, max_iter);
       this->compute_statistics(data.y, data.x, data.u, data.z, data.i, data.w, data.p, data.kernel_scale);
       this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
-      Rcpp::List submodel = this->save();
-      submodel["kernel_scale"] = data.kernel_scale;
+      VCMMSavedModel submodel = this->save();
+      submodel.kernel_scale = data.kernel_scale;
       if(l==0){
         // store coefficients for next h loop
         prev_a = this->a;
@@ -74,7 +75,7 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
   return models;
 }
 
-std::vector<Rcpp::List> VCMMModel::grid_search(
+std::vector<VCMMSavedModel> VCMMModel::grid_search(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
@@ -94,20 +95,20 @@ std::vector<Rcpp::List> VCMMModel::grid_search(
 
 
 
-std::vector<Rcpp::List> VCMMModel::path(
+std::vector<VCMMSavedModel> VCMMModel::path(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
     arma::uvec restart,
     VCMMData test,
-    const std::vector<Rcpp::List> & models = std::vector<Rcpp::List>()
+    const std::vector<VCMMSavedModel> & models = std::vector<VCMMSavedModel>()
 ){
   this->a.zeros();
   this->b.zeros();
   arma::mat prev_a = this->a * 0.;
   arma::mat prev_b = this->b * 0.;
   uint n_models = kernel_scale.n_elem;
-  std::vector<Rcpp::List> cvmodels(n_models);
+  std::vector<VCMMSavedModel> cvmodels(n_models);
   Rcpp::Rcout << "[VCMM] Starting path (" << n_models << " models) ... \n";
   Progress pbar(n_models);
   
@@ -130,8 +131,8 @@ std::vector<Rcpp::List> VCMMModel::path(
     this->estimate_parameters(data.y, data.x, data.u, data.p, data.z, data.i, max_iter);
     this->compute_statistics(data.y, data.x, data.u, data.z, data.i, data.w, data.p, data.kernel_scale);
     this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
-    Rcpp::List submodel = this->save();
-    submodel["kernel_scale"] = data.kernel_scale;
+    VCMMSavedModel submodel = this->save();
+    submodel.kernel_scale = data.kernel_scale;
     pbar.increment();
     cvmodels[k] = submodel;
     if(k<n_models - 1){
@@ -147,12 +148,12 @@ std::vector<Rcpp::List> VCMMModel::path(
   return cvmodels;
 }
 
-std::vector<Rcpp::List> VCMMModel::path(
+std::vector<VCMMSavedModel> VCMMModel::path(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
     arma::uvec restart,
-    const std::vector<Rcpp::List> & models = std::vector<Rcpp::List>()
+    const std::vector<VCMMSavedModel> & models = std::vector<VCMMSavedModel>()
 ){
   return this->path(data, kernel_scale, lambda, restart, data, models);
 }

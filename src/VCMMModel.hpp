@@ -2,7 +2,10 @@
 #include <vector>
 //[[Rcpp::depends(RcppArmadillo)]]
 #include "VCMMData.hpp"
+#include "VCMMSavedModel.hpp"
 #include <math.h>
+
+
 
 #ifndef VCMMModel_hpp
 #define VCMMModel_hpp
@@ -12,7 +15,7 @@ class VCMMModel {
 public:
   arma::mat b, tmpb;
   arma::mat a, tmpa;
-  double alpha, lambda;
+  double alpha, lambda, kernel_scale;
   uint px, pu, q, nt, max_iter;
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
@@ -33,6 +36,8 @@ public:
     const double rel_tol,
     const uint max_iter
   );
+  
+  VCMMSavedModel save();
   
   std::vector<arma::mat> linear_predictor(
       const std::vector<arma::mat> & X,
@@ -263,9 +268,7 @@ public:
     const double h
   );
   
-  Rcpp::List save();
-  
-  std::vector<Rcpp::List> grid_search(
+  std::vector<VCMMSavedModel> grid_search(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
@@ -274,7 +277,7 @@ public:
       VCMMData test
   );
   
-  std::vector<Rcpp::List> grid_search(
+  std::vector<VCMMSavedModel> grid_search(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
@@ -282,24 +285,24 @@ public:
       uint n_lambda
   );
   
-  std::vector<Rcpp::List> path(
+  std::vector<VCMMSavedModel> path(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
       arma::uvec restart,
       VCMMData test,
-      const std::vector<Rcpp::List> & models
+      const std::vector<VCMMSavedModel> & models
   );
   
-  std::vector<Rcpp::List> path(
+  std::vector<VCMMSavedModel> path(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
       arma::uvec restart,
-      const std::vector<Rcpp::List> & models
+      const std::vector<VCMMSavedModel> & models
   );
   
-  std::vector<Rcpp::List> orthogonal_search(
+  std::vector<VCMMSavedModel> orthogonal_search(
       VCMMData data,
       arma::vec kernel_scale,
       const double kernel_scale_factor,
@@ -313,4 +316,5 @@ public:
 };
 
 #endif
+
 
