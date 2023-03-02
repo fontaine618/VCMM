@@ -12,7 +12,7 @@ VCMMSavedModel::VCMMSavedModel(
   double alpha, double lambda, double ebic_factor, double kernel_scale,
   double objective, double apllk, double amllk, double bic, double ebic, 
   double rss, double parss, double predparss, double penalty, 
-  double df_vc, double df_kernel, double sig2  
+  double df_vc, double aic_kernel, double bic_kernel, double sig2  
 ){
   this->a = a;
   this->b = b;
@@ -30,7 +30,8 @@ VCMMSavedModel::VCMMSavedModel(
   this->predparss = predparss;
   this->penalty = penalty;
   this->df_vc = df_vc;
-  this->df_kernel = df_kernel;
+  this->aic_kernel = aic_kernel;
+  this->bic_kernel = bic_kernel;
   this->sig2 = sig2;
   this->kernel_scale = kernel_scale;
 }
@@ -52,7 +53,8 @@ Rcpp::List VCMMSavedModel::to_RcppList(){
     Rcpp::Named("parss", this->parss),
     Rcpp::Named("penalty", this->penalty),
     Rcpp::Named("df_vc", this->df_vc),
-    Rcpp::Named("df_kernel", this->df_kernel),
+    Rcpp::Named("aic_kernel", this->aic_kernel),
+    Rcpp::Named("bic_kernel", this->bic_kernel),
     Rcpp::Named("sig2", this->sig2),
     Rcpp::Named("predparss", this->predparss),
     Rcpp::Named("kernel_scale", this->kernel_scale)

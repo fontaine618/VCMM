@@ -19,7 +19,7 @@ public:
   uint px, pu, q, nt, max_iter;
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
-  double objective, rss, parss, pllk, apllk, df_kernel, amllk, bic, ebic, predparss;
+  double objective, rss, parss, pllk, apllk, aic_kernel, bic_kernel, amllk, bic, ebic, predparss;
   double sig2, sig2marginal, sig2profile;
   arma::mat Sigma;
   double ebic_factor;
@@ -125,7 +125,7 @@ public:
   
   arma::rowvec active();
   arma::rowvec effective_sample_size(const std::vector<arma::mat> & W, double kernel_scale);
-  double compute_df_kernel(const std::vector<arma::mat> & W, double kernel_scale);
+  void compute_df_kernel(const std::vector<arma::mat> & W, double kernel_scale);
   
   std::vector<arma::mat> gradients(
       const std::vector<arma::colvec> & Y,
@@ -290,16 +290,14 @@ public:
       arma::vec kernel_scale,
       arma::vec lambda,
       arma::uvec restart,
-      VCMMData test,
-      const std::vector<VCMMSavedModel> & models
+      VCMMData test
   );
   
   std::vector<VCMMSavedModel> path(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
-      arma::uvec restart,
-      const std::vector<VCMMSavedModel> & models
+      arma::uvec restart
   );
   
   std::vector<VCMMSavedModel> orthogonal_search(

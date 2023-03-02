@@ -100,8 +100,7 @@ std::vector<VCMMSavedModel> VCMMModel::path(
     arma::vec kernel_scale,
     arma::vec lambda,
     arma::uvec restart,
-    VCMMData test,
-    const std::vector<VCMMSavedModel> & models = std::vector<VCMMSavedModel>()
+    VCMMData test
 ){
   this->a.zeros();
   this->b.zeros();
@@ -120,11 +119,6 @@ std::vector<VCMMSavedModel> VCMMModel::path(
       data.update_weights(kernel_scale[k]);
       test.update_weights(kernel_scale[k]);
       this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
-    }
-    if(models.size() > 0){ 
-      // initialize at the full model estimates to speed things up!
-      // this->a = (arma::mat)models[k]["a"];
-      // this->b = (arma::mat)models[k]["b"];
     }
     this->lambda = lambda[k];
     this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
@@ -152,8 +146,7 @@ std::vector<VCMMSavedModel> VCMMModel::path(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
-    arma::uvec restart,
-    const std::vector<VCMMSavedModel> & models = std::vector<VCMMSavedModel>()
+    arma::uvec restart
 ){
-  return this->path(data, kernel_scale, lambda, restart, data, models);
+  return this->path(data, kernel_scale, lambda, restart, data);
 }

@@ -139,7 +139,7 @@ void VCMMModel::compute_statistics(
   this->parss = this->compute_parss(Y, X, U, I, P);
   this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
   this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
-  this->df_kernel = this->compute_df_kernel(W, kernel_scale);
+  this->compute_df_kernel(W, kernel_scale);
   
   uint n = 0;
   for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
@@ -191,6 +191,7 @@ VCMMSavedModel VCMMModel::save(){
     this->alpha,
     this->lambda,
     this->ebic_factor,
+    this->kernel_scale,
     this->objective,
     this->apllk,
     this->amllk,
@@ -201,9 +202,9 @@ VCMMSavedModel VCMMModel::save(){
     this->predparss,
     this->penalty(),
     this->df_vc(),
-    this->df_kernel,
-    this->sig2,
-    this->kernel_scale
+    this->aic_kernel,
+    this->bic_kernel,
+    this->sig2
   );
 }
 

@@ -130,7 +130,7 @@ Rcpp::List VCMM(
       Rcpp::Rcout << "[VCMM] CV fold " << fold+1 << "/" << nfolds << "\n";
       VCMMData train = data.get_other_folds(fold);
       VCMMData test = data.get_fold(fold);
-      std::vector<VCMMSavedModel> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test, models);
+      std::vector<VCMMSavedModel> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test);
       for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m].predparss;
     }
     for(uint m=0; m<predparss.n_elem; m++) models[m].predparss = predparss[m];

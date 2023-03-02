@@ -519,7 +519,7 @@ arma::rowvec VCMMModel::effective_sample_size(
   return n;
 }
 
-double VCMMModel::compute_df_kernel(
+void VCMMModel::compute_df_kernel(
     const std::vector<arma::mat> & W, 
     double kernel_scale
 ){
@@ -528,8 +528,8 @@ double VCMMModel::compute_df_kernel(
   // for now, we assume 1/T as the contribution of each time point, 
   // we also assume k(0)=1
   double range = this->t0.max() - this->t0.min();
-  double df_kernel = arma::dot(arma::log(n), df) * range / (this->nt * kernel_scale);
-  return df_kernel;
+  this->bic_kernel = arma::dot(arma::log(n), df) * range / (this->nt * kernel_scale);
+  this->aic_kernel = 2 * arma::accu(df) * range / (this->nt * kernel_scale);
 }
 
 
