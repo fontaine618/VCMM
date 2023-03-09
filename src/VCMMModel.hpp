@@ -19,7 +19,7 @@ public:
   uint px, pu, q, nt, max_iter;
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
-  double objective, rss, parss, pllk, apllk, aic_kernel, bic_kernel, amllk, bic, ebic, predparss;
+  double objective, rss, parss, pllk, apllk, aic_kernel, bic_kernel, amllk, aic, bic, ebic, predparss;
   double sig2, sig2marginal, sig2profile;
   arma::mat Sigma;
   double ebic_factor;
@@ -264,8 +264,8 @@ public:
   );
   
   void compute_ics(
-    const uint n,
-    const double h
+    // const uint n,
+    // const double h
   );
   
   std::vector<VCMMSavedModel> grid_search(

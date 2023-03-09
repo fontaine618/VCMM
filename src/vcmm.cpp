@@ -38,7 +38,8 @@ Rcpp::List VCMM(
     const double rel_tol,
     const uint orthogonal_search_max_rounds,
     const uint bissection_max_evals,
-    const uint nfolds 
+    const uint nfolds,
+    const int cv_seed
 ){
   Rcpp::Rcout << "[VCMM] Initializing data and models ...";
   double h = pow(response.n_elem, -0.2);
@@ -108,6 +109,7 @@ Rcpp::List VCMM(
   
   // CV: maybe move this inside switch
   if(nfolds > 0){
+    arma::arma_rng::set_seed(cv_seed);
     data.prepare_folds(nfolds);
     // need to find all the lambdas
     arma::vec fitted_lambdas(models.size());

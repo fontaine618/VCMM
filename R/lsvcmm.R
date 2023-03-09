@@ -30,6 +30,7 @@ lsvcmm = function(
   
   # cross-validation
   cv=NULL,
+  cv_seed=0,
   
   # parameters
   control=lsvcmm_control()
@@ -162,7 +163,8 @@ lsvcmm = function(
     rel_tol=control[["rel_tol"]],
     orthogonal_search_max_rounds=control[["orthogonal_search_max_rounds"]],
     bissection_max_evals=control[["bissection_max_evals"]],
-    nfolds=cv
+    nfolds=cv,
+    cv_seed=cv_seed
   )
   
   # SUMMARIZE RESULTS
@@ -179,11 +181,11 @@ lsvcmm = function(
     sig2=sapply(obj$models, function(model) model$sig2),
     apllk=sapply(obj$models, function(model) model$apllk),
     amllk=sapply(obj$models, function(model) model$amllk),
+    aic=sapply(obj$models, function(model) model$aic),
     bic=sapply(obj$models, function(model) model$bic),
-    ebic=sapply(obj$models, function(model) model$ebic),
     predparss=sapply(obj$models, function(model) model$predparss)
   )
-  best_idx = which.min(models_path$ebic)
+  best_idx = which.min(models_path$aic)
   
   # AGGREGATE COEFFICIENTS
   a = NULL

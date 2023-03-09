@@ -484,14 +484,16 @@ std::vector<arma::mat> VCMMModel::precision(
 }
 
 
-void VCMMModel::compute_ics(const uint n, const double h){
-  double nh = n * h;
-  uint p = this->nt * this->px;
-  uint df = this->df_vc();
-  double bic_penalty = df * log(nh) / nh;
-  double ebic_penalty = df * log(p) / nh;
-  this->bic = -2*this->amllk + bic_penalty;
-  this->ebic = this->bic + ebic_penalty;
+void VCMMModel::compute_ics(){
+  // void VCMMModel::compute_ics(const uint n, const double h){
+  // double nh = n * h;
+  // uint p = this->nt * this->px;
+  // uint df = this->df_vc();
+  // double bic_penalty = df * log(nh) / nh;
+  // double ebic_penalty = df * log(p) / nh;
+  this->bic = -2*this->amllk + this->bic_kernel;
+  this->aic = -2*this->amllk + this->aic_kernel;
+  // this->ebic = this->bic + ebic_penalty;
 }
 
 uint VCMMModel::df_vc(){

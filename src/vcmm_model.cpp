@@ -141,9 +141,9 @@ void VCMMModel::compute_statistics(
   this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
   this->compute_df_kernel(W, kernel_scale);
   
-  uint n = 0;
-  for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
-  this->compute_ics(n, kernel_scale);
+  // uint n = 0;
+  // for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
+  this->compute_ics();
 }
 
 void VCMMModel::compute_test_statistics(
@@ -195,8 +195,8 @@ VCMMSavedModel VCMMModel::save(){
     this->objective,
     this->apllk,
     this->amllk,
+    this->aic,
     this->bic,
-    this->ebic,
     this->rss,
     this->parss,
     this->predparss,

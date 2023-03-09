@@ -10,7 +10,7 @@ VCMMSavedModel::VCMMSavedModel(
   arma::mat b,
   arma::rowvec t0,
   double alpha, double lambda, double ebic_factor, double kernel_scale,
-  double objective, double apllk, double amllk, double bic, double ebic, 
+  double objective, double apllk, double amllk, double aic, double bic, 
   double rss, double parss, double predparss, double penalty, 
   double df_vc, double aic_kernel, double bic_kernel, double sig2  
 ){
@@ -23,8 +23,8 @@ VCMMSavedModel::VCMMSavedModel(
   this->objective = objective;
   this->apllk = apllk;
   this->amllk = amllk;
+  this->aic = aic;
   this->bic = bic;
-  this->ebic = ebic;
   this->rss = rss;
   this->parss = parss;
   this->predparss = predparss;
@@ -46,8 +46,8 @@ Rcpp::List VCMMSavedModel::to_RcppList(){
     Rcpp::Named("objective", this->objective),
     Rcpp::Named("apllk", this->apllk),
     Rcpp::Named("amllk", this->amllk),
+    Rcpp::Named("aic", this->aic),
     Rcpp::Named("bic", this->bic),
-    Rcpp::Named("ebic", this->ebic),
     Rcpp::Named("ebic_factor", this->ebic_factor),
     Rcpp::Named("rss", this->rss),
     Rcpp::Named("parss", this->parss),
