@@ -440,9 +440,17 @@ void VCMMModel::compute_lipschitz_constants(
   // Rcpp::Rcout << "La: " << this->La << " Lb: " << this->Lb << "\n";
 }
 
+arma::mat VCMMModel::proximal_asgl(
+  const arma::mat &b
+){
+  arma::mat m1 = this->lasso_weights * this->alpha * this->lambda / this->Lb;
+  arma::colvec m2 = this->grplasso_weights * (1 - this->alpha) * this->lambda / this->Lb;
+  return this->proximal_L1L2(b, m1, m2);
+}
+
 arma::rowvec VCMMModel::proximal_L1(
     const arma::rowvec &b,
-    const double m
+    const arma::rowvec &m
 ){
   uint nt = b.n_elem;
   arma::rowvec s(nt);
@@ -460,12 +468,26 @@ arma::rowvec VCMMModel::proximal_L2(
   return fmax(1. - m/sn, 0.) * s;
 }
 
-arma::rowvec VCMMModel::proximal(
-    const arma::rowvec &b
+arma::rowvec VCMMModel::proximal_L1L2_row(
+    const arma::rowvec &b,
+    const arma::rowvec &m1,
+    const double m2
 ){
-  double m1 = this->alpha * this->lambda / this->Lb;
-  double m2 = sqrt(this->nt) * (1 - this->alpha) * this->lambda / this->Lb;
+  // double m1 = this->alpha * this->lambda / this->Lb;
+  // double m2 = sqrt(this->nt) * (1 - this->alpha) * this->lambda / this->Lb;
   return proximal_L2(proximal_L1(b, m1), m2);
+}
+
+arma::mat VCMMModel::proximal_L1L2(
+    const arma::mat &b,
+    const arma::mat &m1,
+    const arma::colvec m2
+){
+  arma::mat out = b * 0.;
+  for(uint j=0; j<this->px; j++){
+    out.row(j) = this->proximal_L1L2_row(b.row(j), m1.row(j), m2[j]);
+  }
+  return out;
 }
 
 
@@ -498,6 +520,11 @@ void VCMMModel::compute_ics(){
 
 uint VCMMModel::df_vc(){
   return arma::accu(this->b != 0.);
+}
+
+void VCMMModel::unpenalize_intercept(){
+  this->lasso_weights.row(0).zeros();
+  this->grplasso_weights[0] = 0.;
 }
 
 arma::rowvec VCMMModel::active(){
@@ -563,7 +590,7 @@ void VCMMModel::backtracking_accelerated_proximal_gradient_step(
     // compute regular update using L
     tmpa = preva - g[0] / La;
     tmpb = prevb - g[1] / Lb;
-    if(this->lambda > 0.) tmpb.row(1) = this->proximal(tmpb.row(1));
+    if(this->lambda > 0.) tmpb= this->proximal_asgl(tmpb);
     // update stepsize and take momentum step
     propa = tmpa + (pt - 1.) * (tmpa - this->tmpa) / momentum;
     propb = tmpb + (pt - 1.) * (tmpb - this->tmpb) / momentum;
@@ -607,7 +634,7 @@ void VCMMModel::accelerated_proximal_gradient_step(
   double newt = 0.5 * (1. + sqrt(1 + 4.*pt*pt));
   arma::colvec tmpa = this->a - g[0] / this->La;
   arma::mat tmpb = this->b - g[1] / this->Lb;
-  if(this->lambda > 0.) tmpb.row(1) = this->proximal(tmpb.row(1));
+  if(this->lambda > 0.) tmpb= this->proximal_asgl(tmpb);
   this->a = tmpa + (pt - 1.) * (tmpa - this->tmpa) / momentum;
   this->b = tmpb + (pt - 1.) * (tmpb - this->tmpb) / momentum;
   this->tmpa = tmpa;
@@ -625,7 +652,7 @@ void VCMMModel::proximal_gradient_step(
   std::vector<arma::mat> g = this->gradients(Y, X, U, W, P);
   arma::colvec tmpa = this->a - g[0] / this->La;
   arma::mat tmpb = this->b - g[1] / this->Lb;
-  if(this->lambda > 0.) tmpb.row(1) = this->proximal(tmpb.row(1));
+  if(this->lambda > 0.) tmpb= this->proximal_asgl(tmpb);
   this->a = tmpa;
   this->b = tmpb;
 }
@@ -642,7 +669,7 @@ void VCMMModel::monotone_accelerated_proximal_gradient_step(
   double newt = 0.5 * (1. + sqrt(1 + 4.*pt*pt));
   arma::colvec proposed_a = this->a - g[0] / this->La;
   arma::mat proposed_b = this->b - g[1] / this->Lb;
-  if(this->lambda > 0.) tmpb.row(1) = this->proximal(tmpb.row(1));
+  if(this->lambda > 0.) tmpb= this->proximal_asgl(tmpb);
   // compare objectives
   this->a = proposed_a;
   this->b = proposed_b;

@@ -23,6 +23,8 @@ public:
   double sig2, sig2marginal, sig2profile;
   arma::mat Sigma;
   double ebic_factor;
+  arma::mat lasso_weights;
+  arma::colvec grplasso_weights;
   
   VCMMModel(
     const uint px,
@@ -188,13 +190,25 @@ public:
       const std::vector<arma::mat> & P
   );
   
-  arma::rowvec proximal(
-      const arma::rowvec & b
+  arma::mat proximal_asgl(
+      const arma::mat & b
+  );
+  
+  arma::rowvec proximal_L1L2_row(
+      const arma::rowvec & b,
+      const arma::rowvec & m1,
+      const double m2
+  );
+  
+  arma::mat proximal_L1L2(
+      const arma::mat & b,
+      const arma::mat & m1,
+      const arma::colvec m2
   );
   
   arma::rowvec proximal_L1(
       const arma::rowvec & b,
-      const double m
+      const arma::rowvec & m
   );
 
   arma::rowvec proximal_L2(
@@ -299,6 +313,13 @@ public:
       arma::vec lambda,
       arma::uvec restart
   );
+  
+  void compute_penalty_weights(
+      const VCMMData data,
+      const double adaptive 
+  );
+  
+  void unpenalize_intercept();
   
   std::vector<VCMMSavedModel> orthogonal_search(
       VCMMData data,

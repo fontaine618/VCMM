@@ -17,6 +17,7 @@ lsvcmm = function(
   lambda=NULL,
   lambda_factor=0.005,
   n_lambda=100,
+  adaptive=0.,
   
   # smoothing
   kernel=c("squared_exponential"),
@@ -118,6 +119,7 @@ lsvcmm = function(
     lambda_factor = 0
     n_lambda = 1
   }
+  stopifnot(adaptive>=0.)
   
   # KERNEL PREPARATION
   kernel = match.arg(kernel)
@@ -157,6 +159,8 @@ lsvcmm = function(
     lambda=lambda,
     lambda_factor=lambda_factor,
     n_lambda=n_lambda, 
+    adaptive=adaptive,
+    penalize_intercept=!vc_intercept,
     max_iter=control[["max_iter"]],
     mult=-1,
     ebic_factor=ebic_factor,

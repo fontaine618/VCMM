@@ -39,6 +39,10 @@ VCMMModel::VCMMModel(
   this->b = b;
   this->tmpb = b;  //storage for FISTA step
   this->tmpa = a;
+  
+  // initialize weights
+  this->lasso_weights = arma::ones(px, nt);
+  this->grplasso_weights = arma::ones(px) / sqrt(nt);
 }
 
 double VCMMModel::compute_lambda_max(
@@ -56,34 +60,44 @@ double VCMMModel::compute_lambda_max(
   std::vector<arma::mat> gradients = this->gradients(Y, X, U, W, P);
   // find max lambda:
   // we start with the two bounds, for each of the two prox operators
-  arma::mat gb1 = gradients[1].row(1);
-  arma::mat b1 = -gb1 / this->Lb;
-  double b1norm2 = arma::norm(b1, "fro");
-  double b1norminf = arma::norm(b1, "inf");
+  arma::mat gb = gradients[1];
+  arma::mat b1 = -gb / this->Lb;
   double lambda_max = -1e10;
-  // L1 bound
-  if(this->alpha > 0.){
-    lambda_max = fmax(lambda_max, b1norminf  * this->Lb / this->alpha);
+  double gnorm2, w1norm2, denum, num;
+  for(uint j=0; j<this->px; j++){
+    // L1 bound
+    if(this->alpha > 0.){
+      for(uint t=0;t<this->nt; t++){
+        if(this->lasso_weights(j, t) > 0.){
+          num = fabs(gb(j, t));
+          denum = this->alpha * this->lasso_weights(j, t) + (1-this->alpha) * this->grplasso_weights[j];
+          lambda_max = fmax(lambda_max, num / denum);
+        }
+      }
+    }
+    // L2 bound
+    gnorm2 = arma::norm(gb.row(j), "fro");
+    w1norm2 = arma::norm(this->lasso_weights.row(j), "fro");
+    if(this->alpha < 1. && this->grplasso_weights[j] > 0.){
+      lambda_max = fmax(lambda_max, gnorm2 / (this->alpha * w1norm2 + (1-this->alpha) * this->grplasso_weights[j]));
+    }
   }
-  // L2 bound
-  if(this->alpha < 1.){
-    lambda_max = fmax(lambda_max, this->Lb * b1norm2 / (this->alpha + (1-this->alpha) * sqrt(this->nt)));
-  }
-  // this will overshoot a bit possibly, so we decrease until a prox update would be nonzero and backtrack one step
-  double m1 = this->alpha * lambda_max / this->Lb;
-  double m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max / this->Lb;
-  arma::mat b = proximal_L2(proximal_L1(b1, m1), m2);
-  uint iter = 0;
-  double mult = 0.95; // we should end up within 5% of the tightest bound
-  while(arma::norm(b, "inf") < 1.e-10){
-    iter++;
-    if(iter>100) break;
-    lambda_max *= mult;
-    m1 = this->alpha * lambda_max / this->Lb;
-    m2 = sqrt(this->nt) * (1 - this->alpha) * lambda_max / this->Lb;
-    b = proximal_L2(proximal_L1(b1, m1), m2);
-  }
-  if(iter > 0) lambda_max /= mult;// we went one iteration too far
+  // // this will overshoot a bit possibly, so we decrease until a prox update would be nonzero and backtrack one step
+  // arma::mat m1 = this->lasso_weights * this->alpha * lambda_max / this->Lb;
+  // arma::colvec m2 = this->grplasso_weights * (1 - this->alpha) * lambda_max / this->Lb;
+  // b = this->proximal_L1L2(b1, m1, m2);
+  // 
+  // uint iter = 0;
+  // double mult = 0.95; // we should end up within 5% of the tightest bound
+  // while(arma::norm(b, "inf") < 1.e-10){
+  //   iter++;
+  //   if(iter>100) break;
+  //   lambda_max *= mult;
+  //   m1 = this->lasso_weights * this->alpha * lambda_max / this->Lb;
+  //   m2 = this->grplasso_weights * (1 - this->alpha) * lambda_max / this->Lb;
+  //   b = this->proximal_L1L2(b1, m1, m2);
+  // }
+  // if(iter > 0) lambda_max /= mult;// we went one iteration too far
   return lambda_max; 
 }
 
@@ -103,7 +117,6 @@ void VCMMModel::fit(
   this->cLa = this->La;
   this->cLb = this->Lb;
   this->momentum = 1.;
-  
   double prev_obj = this->loss(Y, X, U, W, P) + this->penalty();
   for(uint iter=1; iter<=max_iter; iter++){
     
@@ -181,6 +194,19 @@ void VCMMModel::estimate_parameters(
   this->sig2marginal = rss / n;
   this->sig2profile = parss / n;
   this->sig2 = this->sig2marginal;
+}
+
+void VCMMModel::compute_penalty_weights(
+    const VCMMData data,
+    const double adaptive 
+){
+  this->lambda = 0.;
+  this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
+  this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
+  this->lasso_weights = arma::pow(arma::abs(this->b), -adaptive);
+  arma::colvec row_norms = arma::zeros(this->px);
+  for(uint j=0; j<this->px; j++) row_norms[j] = arma::norm(this->b.row(j), 2);
+  this->grplasso_weights = arma::pow(row_norms, -adaptive);
 }
 
 VCMMSavedModel VCMMModel::save(){

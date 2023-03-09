@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // VCMM
-Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, const std::string tuning_strategy, arma::vec kernel_scale, const double kernel_scale_factor, uint n_kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const uint max_iter, const double mult, const double ebic_factor, const double rel_tol, const uint orthogonal_search_max_rounds, const uint bissection_max_evals, const uint nfolds, const int cv_seed);
-RcppExport SEXP _VCMM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP tuning_strategySEXP, SEXP kernel_scaleSEXP, SEXP kernel_scale_factorSEXP, SEXP n_kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP max_iterSEXP, SEXP multSEXP, SEXP ebic_factorSEXP, SEXP rel_tolSEXP, SEXP orthogonal_search_max_roundsSEXP, SEXP bissection_max_evalsSEXP, SEXP nfoldsSEXP, SEXP cv_seedSEXP) {
+Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& random_design, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, const std::string tuning_strategy, arma::vec kernel_scale, const double kernel_scale_factor, uint n_kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const float adaptive, const bool penalize_intercept, const uint max_iter, const double mult, const double ebic_factor, const double rel_tol, const uint orthogonal_search_max_rounds, const uint bissection_max_evals, const uint nfolds, const int cv_seed);
+RcppExport SEXP _VCMM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP random_designSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP tuning_strategySEXP, SEXP kernel_scaleSEXP, SEXP kernel_scale_factorSEXP, SEXP n_kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP adaptiveSEXP, SEXP penalize_interceptSEXP, SEXP max_iterSEXP, SEXP multSEXP, SEXP ebic_factorSEXP, SEXP rel_tolSEXP, SEXP orthogonal_search_max_roundsSEXP, SEXP bissection_max_evalsSEXP, SEXP nfoldsSEXP, SEXP cv_seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -32,6 +32,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type lambda_factor(lambda_factorSEXP);
     Rcpp::traits::input_parameter< uint >::type n_lambda(n_lambdaSEXP);
+    Rcpp::traits::input_parameter< const float >::type adaptive(adaptiveSEXP);
+    Rcpp::traits::input_parameter< const bool >::type penalize_intercept(penalize_interceptSEXP);
     Rcpp::traits::input_parameter< const uint >::type max_iter(max_iterSEXP);
     Rcpp::traits::input_parameter< const double >::type mult(multSEXP);
     Rcpp::traits::input_parameter< const double >::type ebic_factor(ebic_factorSEXP);
@@ -40,13 +42,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const uint >::type bissection_max_evals(bissection_max_evalsSEXP);
     Rcpp::traits::input_parameter< const uint >::type nfolds(nfoldsSEXP);
     Rcpp::traits::input_parameter< const int >::type cv_seed(cv_seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, tuning_strategy, kernel_scale, kernel_scale_factor, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, max_iter, mult, ebic_factor, rel_tol, orthogonal_search_max_rounds, bissection_max_evals, nfolds, cv_seed));
+    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, tuning_strategy, kernel_scale, kernel_scale_factor, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, adaptive, penalize_intercept, max_iter, mult, ebic_factor, rel_tol, orthogonal_search_max_rounds, bissection_max_evals, nfolds, cv_seed));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_VCMM_VCMM", (DL_FUNC) &_VCMM_VCMM, 23},
+    {"_VCMM_VCMM", (DL_FUNC) &_VCMM_VCMM, 25},
     {NULL, NULL, 0}
 };
 

@@ -32,6 +32,8 @@ Rcpp::List VCMM(
     arma::vec lambda,
     const double lambda_factor,
     uint n_lambda,
+    const float adaptive,
+    const bool penalize_intercept,
     const uint max_iter,
     const double mult,
     const double ebic_factor,
@@ -67,7 +69,21 @@ Rcpp::List VCMM(
     rel_tol,
     max_iter
   );
+  if(!penalize_intercept) model.unpenalize_intercept();
   Rcpp::Rcout << "done.\n";
+  
+  // Adaptive part
+  if(adaptive > 0.){
+    Rcpp::Rcout << "[VCMM] Computing penalty weights for adaptive SGL ...";
+    model.compute_penalty_weights(data, adaptive);
+    if(!penalize_intercept) model.unpenalize_intercept();
+    Rcpp::Rcout << "\n";
+    model.lasso_weights.print();
+    model.grplasso_weights.print();
+    Rcpp::Rcout << "done.\n";
+  }
+  // End adaptive
+  
   
   std::vector<VCMMSavedModel> models;
   switch(tuning_strategy_to_int[tuning_strategy]){
@@ -109,7 +125,11 @@ Rcpp::List VCMM(
   
   // CV: maybe move this inside switch
   if(nfolds > 0){
-    arma::arma_rng::set_seed(cv_seed);
+    // arma::arma_rng::set_seed(cv_seed); "When called from R, the RNG seed has to be set at the R level via set.seed()"
+    Rcpp::Environment base_env("package:base");
+    Rcpp::Function set_seed_r = base_env["set.seed"];
+    set_seed_r(cv_seed);
+    
     data.prepare_folds(nfolds);
     // need to find all the lambdas
     arma::vec fitted_lambdas(models.size());
