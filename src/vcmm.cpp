@@ -67,22 +67,20 @@ Rcpp::List VCMM(
     estimated_time,
     ebic_factor,
     rel_tol,
-    max_iter
+    max_iter,
+    penalize_intercept
   );
-  if(!penalize_intercept) model.unpenalize_intercept();
   Rcpp::Rcout << "done.\n";
   
-  // Adaptive part
+  
+  
+  // Adaptive SGL
   if(adaptive > 0.){
     Rcpp::Rcout << "[VCMM] Computing penalty weights for adaptive SGL ...";
+    model.compute_lipschitz_constants(data.x, data.u, data.w, data.p);
     model.compute_penalty_weights(data, adaptive);
-    if(!penalize_intercept) model.unpenalize_intercept();
-    Rcpp::Rcout << "\n";
-    model.lasso_weights.print();
-    model.grplasso_weights.print();
     Rcpp::Rcout << "done.\n";
   }
-  // End adaptive
   
   
   std::vector<VCMMSavedModel> models;
@@ -118,7 +116,8 @@ Rcpp::List VCMM(
       kernel_scale,
       lambda,
       lambda_factor,
-      n_lambda
+      n_lambda,
+      adaptive
     );
     break;
   }
@@ -152,7 +151,7 @@ Rcpp::List VCMM(
       Rcpp::Rcout << "[VCMM] CV fold " << fold+1 << "/" << nfolds << "\n";
       VCMMData train = data.get_other_folds(fold);
       VCMMData test = data.get_fold(fold);
-      std::vector<VCMMSavedModel> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test);
+      std::vector<VCMMSavedModel> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test, adaptive);
       for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m].predparss;
     }
     for(uint m=0; m<predparss.n_elem; m++) models[m].predparss = predparss[m];

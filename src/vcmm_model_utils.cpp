@@ -230,20 +230,6 @@ double VCMMModel::approximate_marginal_loglikelihood(
   return 0.5 * (logdet - n*log(sig2));
 }
 
-
-
-double VCMMModel::penalty(){
-  double penalty;
-  double l1, l2;
-  
-  l1 = arma::norm(this->b.row(1), 1);
-  l2 = arma::norm(this->b.row(1), 2);
-  penalty = this->alpha * l1 ;
-  penalty += (1. - this->alpha) * sqrt(this->nt) * l2;
-  
-  return penalty * this->lambda;
-}
-
 std::vector<arma::mat> VCMMModel::gradients(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
@@ -423,21 +409,20 @@ void VCMMModel::compute_lipschitz_constants(
     }
     arma::eig_sym(eigval, -HmLI);
     minevalHmLI = eigval.min();
-    // Rcpp::Rcout << iter << " minevalHmLI: " << minevalHmLI << "\n";
   }
-  // Rcpp::Rcout << " (" << iter << " iterations) ";
-  // arma::eig_sym(eigval, hessian);
-  // Rcpp::Rcout << " (min eval=" << eigval.min() << ") ";
-  // // overwrite everything to just largest eigenvalue of the hessian:
-  // arma::eig_sym(eigval, hessian);
-  // double L = eigval.max();
-  // L = 1000.;
-  // La = L;
-  // Lb = L;
   
   this->La = La;
   this->Lb = Lb;
-  // Rcpp::Rcout << "La: " << this->La << " Lb: " << this->Lb << "\n";
+}
+
+double VCMMModel::penalty(){
+  double penalty = 0.;
+  for(uint j=0; j<this->px; j++){
+    penalty += this->alpha * arma::accu(arma::abs(this->b.row(j)) % this->lasso_weights.row(j));
+    double l2j = arma::norm(this->b.row(j), 2);
+    penalty += (1. - this->alpha) * this->grplasso_weights(j) * l2j;
+  }
+  return penalty * this->lambda;
 }
 
 arma::mat VCMMModel::proximal_asgl(
@@ -520,11 +505,6 @@ void VCMMModel::compute_ics(){
 
 uint VCMMModel::df_vc(){
   return arma::accu(this->b != 0.);
-}
-
-void VCMMModel::unpenalize_intercept(){
-  this->lasso_weights.row(0).zeros();
-  this->grplasso_weights[0] = 0.;
 }
 
 arma::rowvec VCMMModel::active(){

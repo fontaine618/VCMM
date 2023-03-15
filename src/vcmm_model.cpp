@@ -15,7 +15,8 @@ VCMMModel::VCMMModel(
   const arma::rowvec &t0,
   const double ebic_factor,
   const double rel_tol,
-  const uint max_iter
+  const uint max_iter,
+  const bool penalize_intercept
 ){
   this->px = px;
   this->pu = pu;
@@ -29,6 +30,7 @@ VCMMModel::VCMMModel(
   this->max_iter = max_iter;
   this->sig2 = 1.;
   this->Sigma = arma::eye(q, q);
+  this->penalize_intercept = penalize_intercept;
 
   // initialize coefficients to 0
   arma::mat b(px, nt);
@@ -43,6 +45,7 @@ VCMMModel::VCMMModel(
   // initialize weights
   this->lasso_weights = arma::ones(px, nt);
   this->grplasso_weights = arma::ones(px) / sqrt(nt);
+  if(!penalize_intercept) this->unpenalize_intercept();
 }
 
 double VCMMModel::compute_lambda_max(
@@ -201,12 +204,17 @@ void VCMMModel::compute_penalty_weights(
     const double adaptive 
 ){
   this->lambda = 0.;
-  this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
   this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
   this->lasso_weights = arma::pow(arma::abs(this->b), -adaptive);
   arma::colvec row_norms = arma::zeros(this->px);
   for(uint j=0; j<this->px; j++) row_norms[j] = arma::norm(this->b.row(j), 2);
   this->grplasso_weights = arma::pow(row_norms, -adaptive);
+  if(!this->penalize_intercept) this->unpenalize_intercept();
+}
+
+void VCMMModel::unpenalize_intercept(){
+  this->lasso_weights.row(0).zeros();
+  this->grplasso_weights[0] = 0.;
 }
 
 VCMMSavedModel VCMMModel::save(){

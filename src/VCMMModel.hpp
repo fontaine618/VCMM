@@ -25,6 +25,7 @@ public:
   double ebic_factor;
   arma::mat lasso_weights;
   arma::colvec grplasso_weights;
+  bool penalize_intercept;
   
   VCMMModel(
     const uint px,
@@ -36,7 +37,8 @@ public:
     const arma::rowvec &t0,
     const double ebic_factor,
     const double rel_tol,
-    const uint max_iter
+    const uint max_iter,
+    const bool penalize_intercept
   );
   
   VCMMSavedModel save();
@@ -288,7 +290,8 @@ public:
       arma::vec lambda,
       const double lambda_factor,
       uint n_lambda,
-      VCMMData test
+      VCMMData test,
+      double adaptive
   );
   
   std::vector<VCMMSavedModel> grid_search(
@@ -296,7 +299,8 @@ public:
       arma::vec kernel_scale,
       arma::vec lambda,
       const double lambda_factor,
-      uint n_lambda
+      uint n_lambda,
+      double adaptive
   );
   
   std::vector<VCMMSavedModel> path(
@@ -304,14 +308,16 @@ public:
       arma::vec kernel_scale,
       arma::vec lambda,
       arma::uvec restart,
-      VCMMData test
+      VCMMData test,
+      double adaptive
   );
   
   std::vector<VCMMSavedModel> path(
       VCMMData data,
       arma::vec kernel_scale,
       arma::vec lambda,
-      arma::uvec restart
+      arma::uvec restart,
+      double adaptive
   );
   
   void compute_penalty_weights(

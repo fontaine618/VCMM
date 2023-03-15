@@ -15,7 +15,8 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
     arma::vec lambda,
     const double lambda_factor,
     uint n_lambda,
-    VCMMData test
+    VCMMData test,
+    double adaptive
 ){
   arma::mat prev_a = this->a * 0.;
   arma::mat prev_b = this->b * 0.;
@@ -39,6 +40,16 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
     Rcpp::Rcout << "[VCMM] Computing Lipschitz constants ...";
     this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
     Rcpp::Rcout << "done. (La=" << this->La << ", Lb=" << this->Lb << ")\n";
+    
+    
+    // Adaptive SGL
+    if(adaptive > 0.){
+      Rcpp::Rcout << "[VCMM] Computing penalty weights for adaptive SGL ...";
+      this->compute_penalty_weights(data, adaptive);
+      Rcpp::Rcout << "done.\n";
+      this->a = prev_a;
+      this->b = prev_b;
+    }
     
     if(lambda_factor > 0){
       Rcpp::Rcout << "[VCMM] Computing maximum regularization parameter \n";
@@ -80,7 +91,8 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
     arma::vec kernel_scale,
     arma::vec lambda,
     const double lambda_factor,
-    uint n_lambda
+    uint n_lambda,
+    double adaptive
 ){
   return this->grid_search(
     data,
@@ -88,7 +100,8 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
     lambda, 
     lambda_factor, 
     n_lambda, 
-    data
+    data,
+    adaptive
   );
 }
 
@@ -100,7 +113,8 @@ std::vector<VCMMSavedModel> VCMMModel::path(
     arma::vec kernel_scale,
     arma::vec lambda,
     arma::uvec restart,
-    VCMMData test
+    VCMMData test,
+    double adaptive
 ){
   this->a.zeros();
   this->b.zeros();
@@ -112,13 +126,18 @@ std::vector<VCMMSavedModel> VCMMModel::path(
   Progress pbar(n_models);
   
   for(uint k=0; k<n_models; k++){
-    // warmstart to largest lambda from last iteration
-    if(restart[k]==1){
-      this->a = prev_a;
-      this->b = prev_b;
+    if(restart[k]==1){ // this means we have a new kernel_scale
       data.update_weights(kernel_scale[k]);
       test.update_weights(kernel_scale[k]);
+      // warmstart to largest lambda from last iteration
+      this->a = prev_a;
+      this->b = prev_b;
+      // Lipschitz constant also depends on kernel scale
       this->compute_lipschitz_constants(data.x, data.u, data.w, data.p);
+      // Adaptive weights needs to be updated
+      if(adaptive > 0.) this->compute_penalty_weights(data, adaptive);
+      this->a = prev_a;
+      this->b = prev_b;
     }
     this->lambda = lambda[k];
     this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
@@ -146,7 +165,8 @@ std::vector<VCMMSavedModel> VCMMModel::path(
     VCMMData data,
     arma::vec kernel_scale,
     arma::vec lambda,
-    arma::uvec restart
+    arma::uvec restart,
+    double adaptive
 ){
-  return this->path(data, kernel_scale, lambda, restart, data);
+  return this->path(data, kernel_scale, lambda, restart, data, adaptive);
 }
