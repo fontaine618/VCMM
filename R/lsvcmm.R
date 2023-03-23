@@ -1,3 +1,33 @@
+#' Title
+#'
+#' @param response 
+#' @param subject 
+#' @param time 
+#' @param vc_covariates 
+#' @param nvc_covariates 
+#' @param data 
+#' @param random_design 
+#' @param vc_intercept 
+#' @param estimated_time 
+#' @param sgl 
+#' @param lambda 
+#' @param lambda_factor 
+#' @param n_lambda 
+#' @param adaptive 
+#' @param kernel 
+#' @param kernel_scale 
+#' @param kernel_scale_factor 
+#' @param n_kernel_scale 
+#' @param tuning_strategy 
+#' @param ebic_factor 
+#' @param cv 
+#' @param cv_seed 
+#' @param control 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 lsvcmm = function(
   # data
   response,
@@ -215,9 +245,12 @@ lsvcmm = function(
     best_nvc=a[, best_idx],
     best_vc=b[,,best_idx],
     nvc_path=a,
-    vc_path=b
+    vc_path=b,
+    cv_folds=cv
   )
   
   class(res) = c("vcmm")
   return(res)
 }
+
+# TODO: need to store variable names

@@ -33,8 +33,10 @@
   [ ] Predict
 [x] Try on real data
   [ ] maybe transofrm for variance
-[ ] ASGL
-  [ ] Update penalty
+[x] ASGL
+  [x] Update penalty
+[ ] Local linear regression
+  - should be fairly simple: just add additional covariates
 
 # Bugs, etc.
 
@@ -42,4 +44,5 @@
 
 # Notes
 
-NO IDEA FOR IC!!
+- The CV/AIC/BIC often show two local modes
+  - one with medium h, one with large h
