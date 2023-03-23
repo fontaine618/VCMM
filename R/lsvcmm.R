@@ -73,70 +73,9 @@ lsvcmm = function(
   }
   
   # DATA PREPARATION
-  if(!is.null(data)){ # here, we expect response, time, nvc_covariates and vc_covariates to be strings/indices
-    response = data[[response]]
-    subject = data[[subject]]
-    time = data[[time]]
-    if(!is.null(vc_covariates)){
-      if(is.character(vc_covariates)) vc_covariates = matrix(data[[vc_covariates]], ncol=1)
-      if(is.vector(vc_covariates)) vc_covariates = as.matrix(subset(data, select=vc_covariates))
-    }
-    if(!is.null(nvc_covariates)){
-      nvc_covariates = as.matrix(subset(data, select=nvc_covariates))
-    }else{
-      nvc_covariates = matrix(numeric(0L), nrow=nrow(vc_covariates), ncol=0)
-    }
-  } # we assume all terms to be already in vector/matrix form here on
-  n = length(response)
-  y = matrix(response, n, 1)
-  subject_ids = sort(unique(subject))
-  s = sapply(subject, function(ss) which.max(ss==subject_ids)) - 1
-  s = matrix(s, n, 1)
-  t = matrix(time, n, 1)
-  if(!is.null(vc_covariates)){
-    X = vc_covariates
-    if(vc_intercept) X = cbind(1, X)
-  }else{
-    if(vc_intercept){
-      X = matrix(1, n, 1)
-    }else{stop("either vc_covariates or vc_intercept must be specified (there are no vc otherwise!)")}
-  }
-  U = nvc_covariates
+  d = prepare_data(response, subject, time, vc_covariates, nvc_covariates, data, random_design, vc_intercept)
   
-  px = ncol(X)
-  pu = ncol(U)
-  
-  # RESCALE TIME
-  if(control[["scale_time"]]){
-    t_range = range(t)
-    if(!is.null(estimated_time)){
-      t_range[1] = min(min(estimated_time), t_range[1]) 
-      t_range[2] = max(max(estimated_time), t_range[2]) 
-    }
-    t = (t - t_range[1]) / diff(t_range)
-  }
-  
-  # TIME POINTS
-  if(is.null(estimated_time)){
-    nt = length(unique(t))
-    if(nt * px > n) {
-      nt = floor(n / px)
-      estimated_time = unname(quantile(t, seq(0, nt-1)/(nt-1)))
-    }else{
-      estimated_time = unique(t)
-    }
-  }else{
-    if(control[["scale_time"]]){
-      estimated_time = (estimated_time - t_range[1]) / diff(t_range)
-    }
-  }
-  t0 = sort(unique(estimated_time))
-  
-  # RANDOM DESIGN
-  random_design = match.arg(random_design)
-  if(random_design=="intercept"){
-    Z = matrix(1, n, 1)
-  }
+  tt = prepare_time(d$t, estimated_time, control[["scale_time"]])
   
   # REGULARIZATION PREPARATION
   stopifnot((sgl >= 0) && (sgl <=1))
@@ -169,18 +108,17 @@ lsvcmm = function(
   
   # TUNING PREPARATION
   if(is.null(cv)) cv = 0
-  if(cv == -1) cv = length(subject_ids) - 1  # LOO
-  
+  if(cv == -1) cv = length(d$subject_ids) - 1  # LOO
   
   # CALL
   obj = VCMM(
-    response=y, 
-    subject=s, 
-    response_time=t,
-    random_design=Z,
-    vcm_covariates=X,
-    fixed_covariates=U,
-    estimated_time=t0,
+    response=d$y, 
+    subject=d$s, 
+    response_time=d$t,
+    random_design=d$Z,
+    vcm_covariates=d$X,
+    fixed_covariates=d$U,
+    estimated_time=tt$t0,
     tuning_strategy=tuning_strategy,
     kernel_scale=kernel_scale, 
     kernel_scale_factor=kernel_scale_factor,
@@ -223,7 +161,7 @@ lsvcmm = function(
   
   # AGGREGATE COEFFICIENTS
   a = NULL
-  if(pu>0) a = matrix(sapply(obj$models, function(model) model$a, simplify="matrix"), nrow=pu)
+  if(d$pu>0) a = matrix(sapply(obj$models, function(model) model$a, simplify="matrix"), nrow=d$pu)
   b = sapply(obj$models, function(model) model$b, simplify="array")
   
   # RESULTS PREPARATION
@@ -231,8 +169,8 @@ lsvcmm = function(
     sgl=sgl,
     random_design=random_design,
     vc_intercept=vc_intercept,
-    t_range=t_range,
-    estimated_time=t0*diff(t_range) + t_range[1],
+    t_range=d$t_range,
+    estimated_time=d$t0*diff(d$t_range) + d$t_range[1],
     ebic_factor=ebic_factor,
     control=control,
     tuning_strategy=tuning_strategy,
