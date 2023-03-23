@@ -165,7 +165,7 @@ VCMMData::VCMMData(
   const arma::rowvec & t0,
   const double kernel_scale
 ){
-  // this constructor is to ease the get method for CV
+  // this constructor is to ease the get method for CV/Bootstrap
   this->kernel_scale = kernel_scale;
   this->w = w;
   this->p = p;
@@ -243,4 +243,11 @@ VCMMData VCMMData::get_fold(uint fold){
 VCMMData VCMMData::get_other_folds(uint fold){
   arma::uvec ids = arma::find(this->foldid != fold);
   return this->get(ids);
+}
+
+VCMMData VCMMData::resample(){
+  uint N = this->y.size();
+  arma::ivec ids = arma::randi(N, arma::distr_param(0, N-1));
+  arma::uvec ids2 = arma::conv_to<arma::uvec>::from(ids);
+  return this->get(ids2);
 }

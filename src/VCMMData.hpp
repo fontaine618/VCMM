@@ -50,6 +50,8 @@ public:
   
   VCMMData get_other_folds(uint fold);
   
+  VCMMData resample();
+  
 };
 
 #endif

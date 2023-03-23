@@ -5,3 +5,7 @@ VCMM <- function(response, subject, response_time, random_design, vcm_covariates
     .Call('_VCMM_VCMM', PACKAGE = 'VCMM', response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, tuning_strategy, kernel_scale, kernel_scale_factor, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, adaptive, penalize_intercept, max_iter, mult, ebic_factor, rel_tol, orthogonal_search_max_rounds, bissection_max_evals, nfolds, cv_seed)
 }
 
+VCMMBoot <- function(response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, kernel_scale, alpha, lambda, adaptive, penalize_intercept, max_iter, mult, rel_tol, n_samples) {
+    .Call('_VCMM_VCMMBoot', PACKAGE = 'VCMM', response, subject, response_time, random_design, vcm_covariates, fixed_covariates, estimated_time, kernel_scale, alpha, lambda, adaptive, penalize_intercept, max_iter, mult, rel_tol, n_samples)
+}
+
