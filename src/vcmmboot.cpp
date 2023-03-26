@@ -80,9 +80,19 @@ Rcpp::List VCMMBoot(
   }
   Rcpp::Rcout << "done.\n";
   
+  // get estimate with full data
+  model.compute_lipschitz_constants(data.x, data.u, data.w, data.p);
+  if(adaptive > 0.) model.compute_penalty_weights(data, adaptive);
+  model.lambda = lambda;  // the above two will change lambda
+  
+  model.fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
+  VCMMSavedModel submodel = model.save();
+  submodel.kernel_scale = data.kernel_scale;
+  
   std::vector<Rcpp::List> models_list(models.size());
   for(uint m=0; m<models.size(); m++) models_list[m] = models[m].to_RcppList();
   return Rcpp::List::create(
-    Rcpp::Named("models", models_list)
+    Rcpp::Named("boot", models_list),
+    Rcpp::Named("model", submodel.to_RcppList())
   );
 }

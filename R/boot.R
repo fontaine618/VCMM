@@ -67,11 +67,17 @@ lsvcmm.boot = function(
   
   # AGGREGATE COEFFICIENTS
   a = NULL
-  if(d$pu>0) a = matrix(sapply(obj$models, function(model) model$a, simplify="matrix"), nrow=d$pu)
-  b = sapply(obj$models, function(model) model$b, simplify="array")
+  if(d$pu>0) a = matrix(sapply(obj$boot, function(model) model$a, simplify="matrix"), nrow=d$pu)
+  b = sapply(obj$boot, function(model) model$b, simplify="array")
   
-  return(list(
+  
+  out = list(
     nvc_boot=a,
-    vc_boot=b
-  ))
+    vc_boot=b,
+    nvc=obj$model$a,
+    vc=obj$model$b,
+    estimated_time=tt$t0*diff(tt$t_range) + tt$t_range[1]
+  )
+  class(out) = c("VCMMBoot")
+  return(out)
 }
