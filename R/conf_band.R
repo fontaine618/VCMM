@@ -18,6 +18,7 @@ confidence_band = function(
   out = data.frame(
     L=out$L, 
     U=out$U,
+    pointwise_confidence=1-2*out$p,
     estimate=obj$vc[var, ],
     mean=apply(samples, 1, mean),
     median=apply(samples, 1, median),
@@ -52,7 +53,7 @@ pointwise_quantile_confidence_band = function(p, samples){
   qs = apply(samples, 1, quantile, c(p, 1-p))
   L = qs[1, ]
   U = qs[2, ]
-  return(list(L=L, U=U))
+  return(list(L=L, U=U, p=p))
 }
 
 proportion_samples_in_band = function(L, U, samples){
@@ -60,4 +61,17 @@ proportion_samples_in_band = function(L, U, samples){
   bU = apply(samples, 2, function(x) all(x<=U))
   between = aL*bU
   return(mean(between))
+}
+
+pointwise_pvalues = function(samples){
+  B = dim(samples)[2]
+  pos = apply(samples, 1, function(x) sum(x>0))
+  neg = apply(samples, 1, function(x) sum(x<0))
+  ppos = 1-pos/B
+  pneg = 1-neg/B
+  pval_npm = pmin(2 * pmin(ppos, pneg), 1)
+  mus = apply(samples, 1, mean)
+  sds = apply(samples, 1, sd)
+  pval_norm = 2 * pnorm(abs(mus)/sds, lower.tail=F)
+  return(list(npm=pval_npm, norm=pval_norm))
 }
