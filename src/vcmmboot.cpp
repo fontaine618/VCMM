@@ -41,7 +41,7 @@ Rcpp::List VCMMBoot(
   );
   
   VCMMModel model = VCMMModel(
-    2, 
+    vcm_covariates.n_cols, 
     fixed_covariates.n_cols,
     estimated_time.n_elem,
     random_design.n_cols,
