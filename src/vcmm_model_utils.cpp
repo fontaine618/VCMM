@@ -381,6 +381,7 @@ void VCMMModel::compute_lipschitz_constants(
     Lb = fmax(Lb, eigval.max());
   }
   
+  // Heuristic might be a little small, increase until fine
   arma::mat HmLI = hessian;
   for(uint j=0; j<this->pu; j++){
     HmLI(j, j) -= La;

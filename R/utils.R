@@ -13,8 +13,7 @@ prepare_data = function(
     subject = data[[subject]]
     time = data[[time]]
     if(!is.null(vc_covariates)){
-      if(is.character(vc_covariates)) vc_covariates = matrix(data[[vc_covariates]], ncol=1)
-      if(is.vector(vc_covariates)) vc_covariates = as.matrix(subset(data, select=vc_covariates))
+       vc_covariates = as.matrix(subset(data, select=vc_covariates))
     }
     if(!is.null(nvc_covariates)){
       nvc_covariates = as.matrix(subset(data, select=nvc_covariates))
