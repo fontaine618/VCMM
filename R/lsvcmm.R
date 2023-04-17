@@ -108,7 +108,7 @@ lsvcmm = function(
   
   # TUNING PREPARATION
   if(is.null(cv)) cv = 0
-  if(cv == -1) cv = length(d$subject_ids) - 1  # LOO
+  if(cv == -1) cv = length(d$subject_ids)  # LOO
   
   # CALL
   obj = VCMM(

@@ -14,11 +14,13 @@ prepare_data = function(
     time = data[[time]]
     if(!is.null(vc_covariates)){
        vc_covariates = as.matrix(subset(data, select=vc_covariates))
+    }else{
+      vc_covariates = matrix(numeric(0L), nrow=length(response), ncol=0)
     }
     if(!is.null(nvc_covariates)){
       nvc_covariates = as.matrix(subset(data, select=nvc_covariates))
     }else{
-      nvc_covariates = matrix(numeric(0L), nrow=nrow(vc_covariates), ncol=0)
+      nvc_covariates = matrix(numeric(0L), nrow=length(response), ncol=0)
     }
   } # we assume all terms to be already in vector/matrix form here on
   n = length(response)
