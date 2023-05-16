@@ -56,7 +56,7 @@ lsvcmm = function(
   n_kernel_scale=20,
   
   # tuning
-  tuning_strategy=c("grid_search", "orthogonal_search", "bisection"),
+  tuning_strategy=c("grid_search"),
   ebic_factor=1.,
   
   # cross-validation

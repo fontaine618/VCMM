@@ -1,31 +1,5 @@
 # To do
 
-[x] Calculate Lipschitz constant
-[x] Use Lipschitz constant to set stepsize
-[x] Find smallest lambda with 0
-[x] Empirical Bayes to estimated random effects
-[x] Implement solution path starting at lambda max
-[x] Implement BIC for solution pas
-  - BIC should be -2llk +  vlog(nh)/nh (eq. -2llk <- rss since the other term is contsant, but there be some scaling issue?)
-  - Compare to EBIC
-  - Can we just take the proxy matrix? Missing scale?
-[x] Experiemnt with estimation of Sigma, seems wrong for the moment (way to large?)
-[x] What are the fitted values?
-  - Interpolation (this makes more sense to me)
-  - Kernel weighing
-[x] choose the kernel scale
-  - BIC might not be the best approach since log(nh) can get negative
-  - KLasso paper requires h~n^-1/5
-  - look at what the properties of log(nh)/(nh) are required? might need to restrict ot the monotonically decreasing part
-  - convex for h > e^(3/2) / n
-  - looks like choosing it without penalty should be very good
-  - use tvReg and use the chosen value
-  - use some estimator
-[x] Connection to Spline, GP?
-[ ] confidence band
-  - Bootstrap?
-  - variance estimation? Information matrix?
-  - Buhlmann & ?? Bootstrap for LASSO (vary lambda, selection frequency; selection stability)
 [ ] R Wrapper
   [x] Main function
   [ ] Summary
@@ -33,11 +7,67 @@
   [ ] Predict
 [x] Try on real data
   [ ] maybe transofrm for variance
-[x] ASGL
-  [x] Update penalty
+[ ] For experiments
+  [x] Implement a smoother for preprocessing (spfda suggets kernel, gfplvcm suggests refund::fpca.sc)
+  [x] ISE0, ISE (see Zhong, 2022; centofanti, 2022)
+
+# Back log
+
 [ ] Local linear regression
   - should be fairly simple: just add additional covariates
+[ ] Estimate RE
+  - Using the weighted residuals interpretation, that could be easier
+[ ] MPI in C++?
 
+# Experiments ideas
+
+speed of change
+time sampling design
+point estimates, GAMM: only report MSE, not classification
+fix Locker?
+
+
+estiamte without random effects
+increase signal size
+SPFDA compare point estimates
+
+# DMBT1
+
+2way histo-geno + NVC sex, all taxa after filtering
+Need to upgrade simultaneous confidence band for multiple curves
+Need to better display within groups (add effects)
+
+# Competing methods
+
+## Functional
+
+- R/spfda (Wang, 2022) CRAN
+  - RE, local sparsity, bands
+  - requires regular design: need interpolation if not
+- R/LocKer (Zhong, 2022+) CRAN
+  - local sparsity
+- R/slasso (Centofanti, 2022+) CRAN
+  - local sparsity
+- R/GFPLVCM (Li, 2022) Supp / https://github.com/BIG-S2/GFPLVCM/
+  - local testing, asynchronous
+- R/MTA (Wang, 2021) https://github.com/chanw0/MTA
+  - global testing
+- R/?? (Kong, 2015) Supp
+  - local sparsity
+- R/?? (Luo, 2017) https://cals.arizona.edu/~anling/sbg/software.htm
+  - NB, local test
+- R/MetaLonDA (Metwally, 2018) CRAN (error) or install_github("aametwally/MetaLonDA", ref = "master")
+  - NB, local test
+  - all taxa simultaneously
+- R/Permuspliner (Shields-Cutler, 2018, FiM) https://github.com/RRShieldsCutler/splinectomeR
+- R/mgcv: spline, no penalty, use pointwise CI
+- R/gamlss
+- R/lmer: spline, RI, use pointwise CI
+
+## Cross-sectional
+- R/metagenomeSeq (Paulson, 2013) Bioconductor
+  - ZIG
+  
 # Bugs, etc.
 
 [ ] The penalty on beta1 is hard coded for now; could be an argument later
@@ -46,3 +76,11 @@
 
 - The CV/AIC/BIC often show two local modes
   - one with medium h, one with large h
+- "For a general basis system, a set of sparse coefficients
+does not necessarily generate a function with local sparse
+feature, which may make trouble in the computation. On the
+contrary, B-spline basis enjoys the compact support property
+(Ramsay and Silverman 2005), which means that the basis
+is non-zero over no more than d + 1 adjacent subintervals." 
+(Sparse logistic functional principal component analysis for binary data, Zhong et al, 2021)
+- add a footnote that if asynchronous covariate, we can do preprocessing using, say FPCA
