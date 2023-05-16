@@ -145,9 +145,12 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
+      Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << ": obj="
+                  << obj << " mllk=" << mllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
+    if(!this->estimate_variance_components) break; // no need for the outer loop 
     
     for(uint step=1; step<=100; step++){
       iter++;
@@ -158,6 +161,8 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
+      Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
+                  << obj << " mllk=" << mllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -225,6 +230,11 @@ void VCMMModel::update_parameters(
   // this->sig2marginal = rss / n;
   // this->sig2profile = parss / n;
   // this->sig2 = this->sig2marginal;
+  double sig2 = this->localized_parss(Y, X, U, W, P);
+  uint n = 0;
+  for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
+  sig2 = sig2 / n;
+  this->sig2 = sig2;
 }
 
 void VCMMModel::compute_penalty_weights(

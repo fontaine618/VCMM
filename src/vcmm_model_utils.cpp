@@ -133,78 +133,20 @@ double VCMMModel::loss(
     const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
-  std::vector<arma::mat> R(Y.size());
-  R = this->residuals(Y, X, U);
+  std::vector<arma::mat> R = this->residuals(Y, X, U);
   double loss = 0.;
-  double sw = 0.;
+  double n = 0.;
   
   for(uint i=0; i<Y.size(); i++){
     for(uint k=0; k<this->nt; k++){
       arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
       loss += arma::dot(rk, P[i] * rk);
     }
-    sw += Y[i].n_elem;
+    n += Y[i].n_elem;
   }
   
-  return 0.5 * loss / sw;
+  return 0.5 * loss / n;
 }
-
-// double VCMMModel::profile_loglikelihood(
-//     const std::vector<arma::colvec> & Y,
-//     const std::vector<arma::mat> & X,
-//     const std::vector<arma::mat> & U,
-//     const std::vector<arma::mat> & I,
-//     const std::vector<arma::mat> & P
-// ){
-//   // This uses *any* precision matrix:
-//   // Use ->precision to get the true Ps beforehand
-//   // Note that we divide by sig2 in the RSS, so keep that in mind when passing P
-//   uint N = Y.size();
-//   uint n = 0;
-//   std::vector<arma::colvec> R(N);
-//   R = this->residuals_at_observed_time(Y, X, U, I);
-//   double pllk = 0.;
-//   double sig2 = this->sig2;
-//   
-//   // compute RSS / sigma^2
-//   for(uint i=0; i<N; i++){
-//     arma::colvec r = R[i];
-//     pllk += arma::dot(r, P[i] * r);
-//     n += r.size();
-//   }
-//   pllk /= sig2;
-//   
-//   // Add the other terms
-//   // pllk += N * arma::log_det_sympd(2 * arma::datum::pi * this->Sigma);
-//   pllk += n * log(2 * arma::datum::pi * sig2);
-//   
-//   return -0.5 * pllk;
-// }
-
-// double VCMMModel::approximate_profile_loglikelihood(
-//     const std::vector<arma::colvec> & Y,
-//     const std::vector<arma::mat> & X,
-//     const std::vector<arma::mat> & U,
-//     const std::vector<arma::mat> & I,
-//     const std::vector<arma::mat> & P
-// ){
-//   // This does not use this->Sigma, 
-//   uint N = Y.size();
-//   uint n = 0;
-//   double sig2 = 0.;
-//   double apllk = 0.;
-//   std::vector<arma::colvec> R(N);
-//   R = this->residuals_at_observed_time(Y, X, U, I);
-//   double parss = this->compute_parss(Y, X, U, I, P);
-//   for(uint i=0; i<Y.size(); i++){
-//     n += Y[i].n_elem;
-//     arma::colvec Pri = P[i] * R[i];
-//     sig2 += arma::dot(Pri, Pri);
-//   }
-//   sig2 /= n;
-//   apllk = n * log(2 * arma::datum::pi * sig2) + parss / sig2;
-//   return -0.5 * apllk;
-// }
 
 double VCMMModel::marginal_loglikelihood(
     const std::vector<arma::colvec> & Y,
@@ -213,7 +155,7 @@ double VCMMModel::marginal_loglikelihood(
     const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
-  double quad = this->localized_parss(Y, X, U, W, P);
+  double quad = this->localized_parss(Y, X, U, W, P) / this->sig2;
   double logdet = this->logdet_global(W, P);
   return -0.5 * (logdet + quad);
 }
@@ -237,6 +179,24 @@ double VCMMModel::localized_parss(
   return parss;
 }
 
+double VCMMModel::localized_rss(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W
+){
+  double parss = 0.;
+  std::vector<arma::mat> R = this->residuals(Y, X, U);
+  
+  for(uint i=0; i<Y.size(); i++){
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
+      parss += arma::dot(rk, rk);
+    }
+  }
+  return parss;
+}
+
 std::vector<arma::mat> VCMMModel::total_weight(const std::vector<arma::mat> & W){
   uint N = W.size();
   std::vector<arma::mat> WT(N);
@@ -255,6 +215,7 @@ std::vector<arma::mat> VCMMModel::precision_global(
     const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
+  // unscaled
   uint N = W.size();
   std::vector<arma::mat> WT = this->total_weight(W);
   std::vector<arma::mat> PG(N);
@@ -272,7 +233,7 @@ double VCMMModel::logdet_global(
   std::vector<arma::mat> PG = this->precision_global(W, P);
   double logdet = 0;
   for(uint i=0; i<N; i++){
-    logdet += arma::log_det_sympd(2 * arma::datum::pi * PG[i]);
+    logdet += arma::log_det_sympd(2 * arma::datum::pi * PG[i] / this->sig2);
   }
   return logdet;
 }

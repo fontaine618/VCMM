@@ -130,6 +130,13 @@ public:
       const std::vector<arma::mat> & P
   );
   
+  double localized_rss(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W
+  );
+  
   double logdet_global(
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P
