@@ -18,24 +18,18 @@ arma::mat rbf_kernel_weight_matrix(
   return od;
 }
 
-std::vector<arma::mat> compute_precision_per_subject(
+std::vector<arma::mat> initialize_precision_per_subject(
     const arma::uvec & subject,
-    const arma::mat & random_design,
-    double mult
+    bool random_effect
 ){
   arma::uvec ids = unique(subject);
   std::vector<arma::mat> out(ids.n_elem);
-  arma::ucolvec is;
-  arma::mat zi;
-  arma::mat zzt;
   arma::mat prec;
-  if (mult < 0.) mult = log(subject.n_elem);
+  double re_ratio = log(subject.n_elem) ? random_effect : 0.;
   
   for(uint i : ids){
-    is = arma::find(subject==i);
-    zi = random_design.rows(is);
-    zzt = zi * zi.t();
-    prec = arma::eye(arma::size(zzt)) + mult * zzt;
+    uint ni = arma::accu(subject == i);
+    prec = arma::eye(ni, ni) + re_ratio;
     out[i] = arma::inv(prec);
   }
   
@@ -113,12 +107,11 @@ VCMMData::VCMMData(
   const arma::colvec & response, // n x 1 in R
   const arma::ucolvec & subject, // n x 1 in {0, 1, ..., N-1}
   const arma::colvec & response_time, // n x 1 in R, but normally in [0,1] is scale_time=T from outside
-  const arma::mat & random_design, // n x q in R, but normally just a column of 1s for random intercept
   const arma::mat & vcm_covariates, // n x px in R, but typically 0/1 (vc intercept has to be added outside)
   const arma::mat & fixed_covariates, // n x pu in R, need to copy outside if constant, but allows changing covariates
   const arma::rowvec & estimated_time, // 1 x nt in R, though it is preferable if scaled to [0,1]
   const double kernel_scale,
-  const double mult
+  const bool random_effect
 ){
   this->kernel_scale = kernel_scale;
   // // create design matrix for time-varying covariates (with intercept)
@@ -133,12 +126,11 @@ VCMMData::VCMMData(
   // compute the precision matrix of random effects
   // (using the approximation from Fan and Li, 2012)
   // NB mult<0 uses mult=log(N), N=nb. observations 
-  this->p = compute_precision_per_subject(subject, random_design, mult);
+  this->p = initialize_precision_per_subject(subject, random_effect);
   
   // to list format and initialize object
   this->y = to_list_by_subject(subject, response);
   this->t = to_list_by_subject(subject, response_time);
-  this->z = to_list_by_subject(subject, random_design);
   this->u = to_list_by_subject(subject, fixed_covariates);
   this->x = to_list_by_subject(subject, vcm_covariates);
   this->i = to_list_by_subject(subject, compute_interpolation(response_time, estimated_time));
@@ -147,7 +139,6 @@ VCMMData::VCMMData(
   // store dimensions for quick access
   this->px = vcm_covariates.n_cols;
   this->pu = fixed_covariates.n_cols;
-  this->q = random_design.n_cols;
   this->nt = t0.n_elem;
   this->n = response.n_elem;
   this->N = y.size();
@@ -156,7 +147,6 @@ VCMMData::VCMMData(
 VCMMData::VCMMData(
   const std::vector<arma::colvec> & y,
   const std::vector<arma::colvec> & t,
-  const std::vector<arma::mat> & z,
   const std::vector<arma::mat> & x,
   const std::vector<arma::mat> & u,
   const std::vector<arma::mat> & p,
@@ -171,14 +161,12 @@ VCMMData::VCMMData(
   this->p = p;
   this->y = y;
   this->t = t;
-  this->z = z;
   this->u = u;
   this->x = x;
   this->i = i;
   this->t0 = t0;
   this->px = x[0].n_cols;
   this->pu = u[0].n_cols;
-  this->q = z[0].n_cols;
   this->nt = t0.n_elem;
   this->N = y.size();
   uint n = 0;
@@ -216,7 +204,6 @@ VCMMData VCMMData::get(arma::uvec ids){
   N = ids.n_elem;
   std::vector<arma::colvec> y(N);
   std::vector<arma::colvec> t(N);
-  std::vector<arma::mat> z(N);
   std::vector<arma::mat> x(N);
   std::vector<arma::mat> u(N);
   std::vector<arma::mat> p(N);
@@ -225,14 +212,13 @@ VCMMData VCMMData::get(arma::uvec ids){
   for(uint i=0; i<N; i++){
     y[i] = this->y[ids[i]];
     t[i] = this->t[ids[i]];
-    z[i] = this->z[ids[i]];
     x[i] = this->x[ids[i]];
     u[i] = this->u[ids[i]];
     p[i] = this->p[ids[i]];
     ii[i] = this->i[ids[i]];
     w[i] = this->w[ids[i]];
   }
-  return VCMMData(y, t, z, x, u, p, ii, w, this->t0, this->kernel_scale);
+  return VCMMData(y, t, x, u, p, ii, w, this->t0, this->kernel_scale);
 }
 
 VCMMData VCMMData::get_fold(uint fold){

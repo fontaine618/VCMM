@@ -38,7 +38,8 @@ lsvcmm = function(
   data=NULL,
   
   # design
-  random_design=c("intercept"),
+  random_effect=T,
+  estimate_variance_components=F,
   vc_intercept=TRUE,
   estimated_time=NULL,
   
@@ -57,7 +58,6 @@ lsvcmm = function(
   
   # tuning
   tuning_strategy=c("grid_search"),
-  ebic_factor=1.,
   
   # cross-validation
   cv=NULL,
@@ -73,7 +73,7 @@ lsvcmm = function(
   }
   
   # DATA PREPARATION
-  d = prepare_data(response, subject, time, vc_covariates, nvc_covariates, data, random_design, vc_intercept)
+  d = prepare_data(response, subject, time, vc_covariates, nvc_covariates, data, vc_intercept)
   
   tt = prepare_time(d$t, estimated_time, control[["scale_time"]])
   
@@ -115,10 +115,11 @@ lsvcmm = function(
     response=d$y, 
     subject=d$s, 
     response_time=tt$t,
-    random_design=d$Z,
     vcm_covariates=d$X,
     fixed_covariates=d$U,
     estimated_time=tt$t0,
+    random_effect=random_effect,
+    estimate_variance_components=estimate_variance_components,
     tuning_strategy=tuning_strategy,
     kernel_scale=kernel_scale, 
     kernel_scale_factor=kernel_scale_factor,
@@ -130,13 +131,10 @@ lsvcmm = function(
     adaptive=adaptive,
     penalize_intercept=!vc_intercept,
     max_iter=control[["max_iter"]],
-    mult=-1,
-    ebic_factor=ebic_factor,
     rel_tol=control[["rel_tol"]],
-    orthogonal_search_max_rounds=control[["orthogonal_search_max_rounds"]],
-    bissection_max_evals=control[["bissection_max_evals"]],
     nfolds=cv,
-    cv_seed=cv_seed
+    cv_seed=cv_seed,
+    progress_bar=control[["progress_bar"]]
   )
   
   # SUMMARIZE RESULTS
@@ -151,8 +149,8 @@ lsvcmm = function(
     rss=sapply(obj$models, function(model) model$rss),
     parss=sapply(obj$models, function(model) model$parss),
     sig2=sapply(obj$models, function(model) model$sig2),
-    apllk=sapply(obj$models, function(model) model$apllk),
-    amllk=sapply(obj$models, function(model) model$amllk),
+    re_ratio=sapply(obj$models, function(model) model$re_ratio),
+    mllk=sapply(obj$models, function(model) model$mllk),
     aic=sapply(obj$models, function(model) model$aic),
     bic=sapply(obj$models, function(model) model$bic),
     predparss=sapply(obj$models, function(model) model$predparss)
@@ -167,11 +165,10 @@ lsvcmm = function(
   # RESULTS PREPARATION
   res = list(
     sgl=sgl,
-    random_design=random_design,
+    random_effect=random_effect,
     vc_intercept=vc_intercept,
     t_range=tt$t_range,
     estimated_time=tt$t0*diff(tt$t_range) + tt$t_range[1],
-    ebic_factor=ebic_factor,
     control=control,
     tuning_strategy=tuning_strategy,
     models_path=models_path,

@@ -11,7 +11,8 @@ lsvcmm(
   vc_covariates = NULL,
   nvc_covariates = NULL,
   data = NULL,
-  random_design = c("intercept"),
+  random_effect = T,
+  estimate_variance_components = F,
   vc_intercept = TRUE,
   estimated_time = NULL,
   sgl = 1,
@@ -23,8 +24,7 @@ lsvcmm(
   kernel_scale = NULL,
   kernel_scale_factor = 10,
   n_kernel_scale = 20,
-  tuning_strategy = c("grid_search", "orthogonal_search", "bisection"),
-  ebic_factor = 1,
+  tuning_strategy = c("grid_search"),
   cv = NULL,
   cv_seed = 0,
   control = lsvcmm_control()
@@ -42,8 +42,6 @@ lsvcmm(
 \item{nvc_covariates}{}
 
 \item{data}{}
-
-\item{random_design}{}
 
 \item{vc_intercept}{}
 
@@ -69,13 +67,15 @@ lsvcmm(
 
 \item{tuning_strategy}{}
 
-\item{ebic_factor}{}
-
 \item{cv}{}
 
 \item{cv_seed}{}
 
 \item{control}{}
+
+\item{random_design}{}
+
+\item{ebic_factor}{}
 }
 \description{
 Title

@@ -16,29 +16,28 @@ public:
   arma::mat b, tmpb;
   arma::mat a, tmpa;
   double alpha, lambda, kernel_scale;
-  uint px, pu, q, nt, max_iter;
+  uint px, pu, nt, max_iter;
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
-  double objective, rss, parss, pllk, apllk, aic_kernel, bic_kernel, amllk, aic, bic, ebic, predparss;
-  double sig2, sig2marginal, sig2profile;
-  arma::mat Sigma;
-  double ebic_factor;
+  double objective, rss, parss, aic_kernel, bic_kernel, mllk, aic, bic, ebic, predparss;
+  double sig2, re_ratio;
   arma::mat lasso_weights;
   arma::colvec grplasso_weights;
-  bool penalize_intercept;
+  bool penalize_intercept, progress_bar, estimate_variance_components, random_effect;
   
   VCMMModel(
     const uint px,
     const uint pu,
     const uint nt,
-    const uint q,
+    const bool random_effect,
     const double alpha,
     const double lambda,
     const arma::rowvec &t0,
-    const double ebic_factor,
     const double rel_tol,
     const uint max_iter,
-    const bool penalize_intercept
+    const bool penalize_intercept,
+    const bool estimate_variance_components,
+    const bool progress_bar
   );
   
   VCMMSavedModel save();
@@ -83,26 +82,27 @@ public:
       const std::vector<arma::mat> & P
   );
   
-  double profile_loglikelihood(
-      const std::vector<arma::colvec> & Y,
-      const std::vector<arma::mat> & X,
-      const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & I,
-      const std::vector<arma::mat> & P
-  );
+  // double profile_loglikelihood(
+  //     const std::vector<arma::colvec> & Y,
+  //     const std::vector<arma::mat> & X,
+  //     const std::vector<arma::mat> & U,
+  //     const std::vector<arma::mat> & I,
+  //     const std::vector<arma::mat> & P
+  // );
   
-  double approximate_profile_loglikelihood(
-      const std::vector<arma::colvec> & Y,
-      const std::vector<arma::mat> & X,
-      const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & I,
-      const std::vector<arma::mat> & P
-  );
+  // double approximate_profile_loglikelihood(
+  //     const std::vector<arma::colvec> & Y,
+  //     const std::vector<arma::mat> & X,
+  //     const std::vector<arma::mat> & U,
+  //     const std::vector<arma::mat> & I,
+  //     const std::vector<arma::mat> & P
+  // );
   
-  double approximate_marginal_loglikelihood(
+  double marginal_loglikelihood(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & P
   );
@@ -122,6 +122,26 @@ public:
       const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & P
   );
+  
+  double localized_parss(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  double logdet_global(
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  std::vector<arma::mat> precision_global(
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  std::vector<arma::mat> total_weight(const std::vector<arma::mat> & W);
   
   double penalty();
   
@@ -218,9 +238,7 @@ public:
       const double m
   );
 
-  std::vector<arma::mat> precision(
-      const std::vector<arma::mat> & Z
-  );
+  void update_precision(std::vector<arma::mat> & P);
   
   void compute_lipschitz_constants(
       const std::vector<arma::mat> & X,
@@ -254,8 +272,7 @@ public:
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & P,
-      const std::vector<arma::mat> & Z,
+      std::vector<arma::mat> & P,
       const std::vector<arma::mat> & I,
       const uint max_iter
   );
@@ -264,7 +281,6 @@ public:
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      const std::vector<arma::mat> & Z,
       const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P,
@@ -279,10 +295,7 @@ public:
       const std::vector<arma::mat> & P
   );
   
-  void compute_ics(
-    // const uint n,
-    // const double h
-  );
+  void compute_ics();
   
   std::vector<VCMMSavedModel> grid_search(
       VCMMData data,

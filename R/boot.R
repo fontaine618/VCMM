@@ -7,7 +7,8 @@ lsvcmm.boot = function(
   data=NULL,
   
   # design
-  random_design=c("intercept"),
+  random_effect=T,
+  estimate_variance_components=F,
   vc_intercept=TRUE,
   estimated_time=NULL,
   
@@ -33,7 +34,7 @@ lsvcmm.boot = function(
   }
   
   # DATA PREPARATION
-  d = prepare_data(response, subject, time, vc_covariates, nvc_covariates, data, random_design, vc_intercept)
+  d = prepare_data(response, subject, time, vc_covariates, nvc_covariates, data, vc_intercept)
   tt = prepare_time(d$t, estimated_time, control[["scale_time"]])
 
   # REGULARIZATION PREPARATION
@@ -50,19 +51,20 @@ lsvcmm.boot = function(
     response=d$y, 
     subject=d$s, 
     response_time=tt$t,
-    random_design=d$Z,
     vcm_covariates=d$X,
     fixed_covariates=d$U,
     estimated_time=tt$t0,
+    random_effect=random_effect,
+    estimate_variance_components=estimate_variance_components,
     kernel_scale=kernel_scale, 
     alpha=sgl,
     lambda=lambda,
     adaptive=adaptive,
     penalize_intercept=!vc_intercept,
     max_iter=control[["max_iter"]],
-    mult=-1,
     rel_tol=control[["rel_tol"]],
-    n_samples=n_samples
+    n_samples=n_samples,
+    progress_bar=control[["progress_bar"]]
   )
   
   # AGGREGATE COEFFICIENTS

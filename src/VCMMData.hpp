@@ -8,9 +8,9 @@ class VCMMData {
   
 public:
   
-  std::vector<arma::mat> p, w, x, u, z, i;
+  std::vector<arma::mat> p, w, x, u, i;
   std::vector<arma::colvec> y, t;
-  int px, pu, q, nt, n, N;
+  int px, pu, nt, n, N;
   arma::rowvec t0;
   double kernel_scale;
   arma::uvec foldid;
@@ -19,18 +19,16 @@ public:
     const arma::colvec & response,
     const arma::ucolvec & subject,
     const arma::colvec & response_time,
-    const arma::mat & random_design,
     const arma::mat & vcm_covariates,
     const arma::mat & fixed_covariates,
     const arma::rowvec & estimated_time,
     const double kernel_scale,
-    const double mult
+    const bool random_effect
   );
   
   VCMMData(
     const std::vector<arma::colvec> & y,
     const std::vector<arma::colvec> & t,
-    const std::vector<arma::mat> & z,
     const std::vector<arma::mat> & x,
     const std::vector<arma::mat> & u,
     const std::vector<arma::mat> & p,

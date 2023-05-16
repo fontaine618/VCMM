@@ -140,10 +140,8 @@ double VCMMModel::loss(
   
   for(uint i=0; i<Y.size(); i++){
     for(uint k=0; k<this->nt; k++){
-      arma::colvec rk = R[i].col(k);
-      arma::colvec wk = W[i].col(k);
-      loss += arma::dot(rk, (P[i] % (arma::sqrt(wk * wk.t()))) * rk);
-      // sw += arma::accu(arma::sqrt(wk * wk.t()));
+      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
+      loss += arma::dot(rk, P[i] * rk);
     }
     sw += Y[i].n_elem;
   }
@@ -151,83 +149,133 @@ double VCMMModel::loss(
   return 0.5 * loss / sw;
 }
 
+// double VCMMModel::profile_loglikelihood(
+//     const std::vector<arma::colvec> & Y,
+//     const std::vector<arma::mat> & X,
+//     const std::vector<arma::mat> & U,
+//     const std::vector<arma::mat> & I,
+//     const std::vector<arma::mat> & P
+// ){
+//   // This uses *any* precision matrix:
+//   // Use ->precision to get the true Ps beforehand
+//   // Note that we divide by sig2 in the RSS, so keep that in mind when passing P
+//   uint N = Y.size();
+//   uint n = 0;
+//   std::vector<arma::colvec> R(N);
+//   R = this->residuals_at_observed_time(Y, X, U, I);
+//   double pllk = 0.;
+//   double sig2 = this->sig2;
+//   
+//   // compute RSS / sigma^2
+//   for(uint i=0; i<N; i++){
+//     arma::colvec r = R[i];
+//     pllk += arma::dot(r, P[i] * r);
+//     n += r.size();
+//   }
+//   pllk /= sig2;
+//   
+//   // Add the other terms
+//   // pllk += N * arma::log_det_sympd(2 * arma::datum::pi * this->Sigma);
+//   pllk += n * log(2 * arma::datum::pi * sig2);
+//   
+//   return -0.5 * pllk;
+// }
 
-double VCMMModel::profile_loglikelihood(
+// double VCMMModel::approximate_profile_loglikelihood(
+//     const std::vector<arma::colvec> & Y,
+//     const std::vector<arma::mat> & X,
+//     const std::vector<arma::mat> & U,
+//     const std::vector<arma::mat> & I,
+//     const std::vector<arma::mat> & P
+// ){
+//   // This does not use this->Sigma, 
+//   uint N = Y.size();
+//   uint n = 0;
+//   double sig2 = 0.;
+//   double apllk = 0.;
+//   std::vector<arma::colvec> R(N);
+//   R = this->residuals_at_observed_time(Y, X, U, I);
+//   double parss = this->compute_parss(Y, X, U, I, P);
+//   for(uint i=0; i<Y.size(); i++){
+//     n += Y[i].n_elem;
+//     arma::colvec Pri = P[i] * R[i];
+//     sig2 += arma::dot(Pri, Pri);
+//   }
+//   sig2 /= n;
+//   apllk = n * log(2 * arma::datum::pi * sig2) + parss / sig2;
+//   return -0.5 * apllk;
+// }
+
+double VCMMModel::marginal_loglikelihood(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & I,
     const std::vector<arma::mat> & P
 ){
-  // This uses *any* precision matrix:
-  // Use ->precision to get the true Ps beforehand
-  // Note that we divide by sig2 in the RSS, so keep that in mind when passing P
-  uint N = Y.size();
-  uint n = 0;
-  std::vector<arma::colvec> R(N);
-  R = this->residuals_at_observed_time(Y, X, U, I);
-  double pllk = 0.;
-  double sig2 = this->sig2;
+  double quad = this->localized_parss(Y, X, U, W, P);
+  double logdet = this->logdet_global(W, P);
+  return -0.5 * (logdet + quad);
+}
+
+double VCMMModel::localized_parss(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  double parss = 0.;
+  std::vector<arma::mat> R = this->residuals(Y, X, U);
   
-  // compute RSS / sigma^2
+  for(uint i=0; i<Y.size(); i++){
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
+      parss += arma::dot(rk, P[i] * rk);
+    }
+  }
+  return parss;
+}
+
+std::vector<arma::mat> VCMMModel::total_weight(const std::vector<arma::mat> & W){
+  uint N = W.size();
+  std::vector<arma::mat> WT(N);
   for(uint i=0; i<N; i++){
-    arma::colvec r = R[i];
-    pllk += arma::dot(r, P[i] * r);
-    n += r.size();
+    uint ni = W[i].n_rows;
+    WT[i] = arma::zeros(ni, ni);
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec wk = arma::sqrt(W[i].col(k));
+      WT[i] += wk * wk.t();
+    }
   }
-  pllk /= sig2;
-  
-  // Add the other terms
-  pllk += N * arma::log_det_sympd(2 * arma::datum::pi * this->Sigma);
-  pllk += n * log(2 * arma::datum::pi * sig2);
-  
-  return -0.5 * pllk;
+  return WT;
 }
 
-
-double VCMMModel::approximate_profile_loglikelihood(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & I,
+std::vector<arma::mat> VCMMModel::precision_global(
+    const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
-  // This does not use this->Sigma, 
-  uint N = Y.size();
-  uint n = 0;
-  double sig2 = 0.;
-  double apllk = 0.;
-  std::vector<arma::colvec> R(N);
-  R = this->residuals_at_observed_time(Y, X, U, I);
-  double parss = this->compute_parss(Y, X, U, I, P);
-  for(uint i=0; i<Y.size(); i++){
-    n += Y[i].n_elem;
-    arma::colvec Pri = P[i] * R[i];
-    sig2 += arma::dot(Pri, Pri);
+  uint N = W.size();
+  std::vector<arma::mat> WT = this->total_weight(W);
+  std::vector<arma::mat> PG(N);
+  for(uint i=0; i<N; i++){
+    PG[i] = P[i] % WT[i];
   }
-  sig2 /= n;
-  apllk = n * log(2 * arma::datum::pi * sig2) + parss / sig2;
-  return -0.5 * apllk;
+  return PG;
 }
 
-
-double VCMMModel::approximate_marginal_loglikelihood(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & I,
+double VCMMModel::logdet_global(
+    const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
-  uint n = 0;
-  double logdet = 0.;
-  double sig2 = this->compute_parss(Y, X, U, I, P);
-  for(uint i=0; i<Y.size(); i++){
-    n += Y[i].n_elem;
-    logdet += arma::log_det_sympd(P[i]);
+  uint N = W.size();
+  std::vector<arma::mat> PG = this->precision_global(W, P);
+  double logdet = 0;
+  for(uint i=0; i<N; i++){
+    logdet += arma::log_det_sympd(2 * arma::datum::pi * PG[i]);
   }
-  sig2 /= n;
-  
-  return 0.5 * (logdet - n*log(sig2));
+  return logdet;
 }
 
 std::vector<arma::mat> VCMMModel::gradients(
@@ -476,32 +524,22 @@ arma::mat VCMMModel::proximal_L1L2(
   return out;
 }
 
-
-std::vector<arma::mat> VCMMModel::precision(
-    const std::vector<arma::mat> & Z
+void VCMMModel::update_precision(
+    std::vector<arma::mat> & P
 ){
-  uint N = Z.size();
-  std::vector<arma::mat> P(N);
-  for(uint i=0; i<N; i++){
-    uint ni = Z[i].n_rows;
-    arma::mat Pi = arma::eye(ni, ni);
-    Pi += Z[i] * this->Sigma * Z[i].t() / this->sig2;
-    P[i] = Pi.i();
+  // This computes the unscaled Precision (without sig2)
+  uint ni;
+  for(uint i=0; i<P.size(); i++){
+    uint ni = P[i].n_rows;
+    P[i] = arma::eye(ni, ni);
+    P[i] -= 1/(ni + 1/this->re_ratio);
   }
-  return P;
 }
 
 
 void VCMMModel::compute_ics(){
-  // void VCMMModel::compute_ics(const uint n, const double h){
-  // double nh = n * h;
-  // uint p = this->nt * this->px;
-  // uint df = this->df_vc();
-  // double bic_penalty = df * log(nh) / nh;
-  // double ebic_penalty = df * log(p) / nh;
-  this->bic = -2*this->amllk + this->bic_kernel;
-  this->aic = -2*this->amllk + this->aic_kernel;
-  // this->ebic = this->bic + ebic_penalty;
+  this->bic = -2*this->mllk + this->bic_kernel;
+  this->aic = -2*this->mllk + this->aic_kernel;
 }
 
 uint VCMMModel::df_vc(){
@@ -616,8 +654,8 @@ void VCMMModel::accelerated_proximal_gradient_step(
   arma::colvec tmpa = this->a - g[0] / this->La;
   arma::mat tmpb = this->b - g[1] / this->Lb;
   if(this->lambda > 0.) tmpb= this->proximal_asgl(tmpb);
-  this->a = tmpa + (pt - 1.) * (tmpa - this->tmpa) / momentum;
-  this->b = tmpb + (pt - 1.) * (tmpb - this->tmpb) / momentum;
+  this->a = tmpa + (pt - 1.) * (tmpa - this->tmpa) / pt;
+  this->b = tmpb + (pt - 1.) * (tmpb - this->tmpb) / pt;
   this->tmpa = tmpa;
   this->tmpb = tmpb;
   this->momentum = newt;

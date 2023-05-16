@@ -12,17 +12,17 @@ public:
   arma::mat b;
   arma::rowvec t0;
   double alpha, lambda, ebic_factor, kernel_scale;
-  double objective, apllk, amllk, bic, aic, rss, parss, predparss, penalty, df_vc, aic_kernel, bic_kernel, sig2;
+  double objective, mllk, bic, aic, rss, parss, predparss, penalty, df_vc, aic_kernel, bic_kernel, sig2, re_ratio;
   
   VCMMSavedModel();  // need this to create empty lists
   VCMMSavedModel(
     arma::mat a,
     arma::mat b,
     arma::rowvec t0,
-    double alpha, double lambda, double ebic_factor, double kernel_scale,
-    double objective, double apllk, double amllk, double aic, double bic, 
+    double alpha, double lambda, double kernel_scale,
+    double objective, double mllk, double aic, double bic, 
     double rss, double parss, double predparss, double penalty, 
-    double df_vc, double aic_kernel, double bic_kernel, double sig2  
+    double df_vc, double aic_kernel, double bic_kernel, double sig2, double re_ratio  
   );
   
   Rcpp::List to_RcppList();

@@ -13,45 +13,46 @@ Rcpp::List VCMMBoot(
     const arma::colvec & response,
     const arma::ucolvec & subject,
     const arma::colvec & response_time,
-    const arma::mat & random_design,
     const arma::mat & vcm_covariates,
     const arma::mat & fixed_covariates,
     const arma::rowvec & estimated_time,
+    bool random_effect,
+    bool estimate_variance_components,
     const double kernel_scale,
     const double alpha,
     const double lambda,
     const float adaptive,
     const bool penalize_intercept,
     const uint max_iter,
-    const double mult,
     const double rel_tol,
-    const int n_samples
+    const int n_samples,
+    const bool progress_bar
 ){
   Rcpp::Rcout << "[VCMMBoot] Initializing data and models ...";
   VCMMData data = VCMMData(
     response, 
     subject,
     response_time,
-    random_design,
     vcm_covariates,
     fixed_covariates,
     estimated_time,
     kernel_scale,
-    mult
+    random_effect
   );
   
   VCMMModel model = VCMMModel(
     vcm_covariates.n_cols, 
     fixed_covariates.n_cols,
     estimated_time.n_elem,
-    random_design.n_cols,
+    random_effect,
     alpha,
     lambda,
     estimated_time,
-    1.,
     rel_tol,
     max_iter,
-    penalize_intercept
+    penalize_intercept,
+    estimate_variance_components,
+    progress_bar
   );
   
   Rcpp::Rcout << "done.\n";

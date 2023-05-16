@@ -5,8 +5,6 @@
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
-#include <progress_bar.hpp>
 #include <map>
 
 std::map<std::string, int> tuning_strategy_to_int{
@@ -20,10 +18,11 @@ Rcpp::List VCMM(
     const arma::colvec & response,
     const arma::ucolvec & subject,
     const arma::colvec & response_time,
-    const arma::mat & random_design,
     const arma::mat & vcm_covariates,
     const arma::mat & fixed_covariates,
     const arma::rowvec & estimated_time,
+    bool random_effect,
+    bool estimate_variance_components,
     const std::string tuning_strategy,
     arma::vec kernel_scale,
     const double kernel_scale_factor,
@@ -35,13 +34,10 @@ Rcpp::List VCMM(
     const float adaptive,
     const bool penalize_intercept,
     const uint max_iter,
-    const double mult,
-    const double ebic_factor,
     const double rel_tol,
-    const uint orthogonal_search_max_rounds,
-    const uint bissection_max_evals,
     const uint nfolds,
-    const int cv_seed
+    const int cv_seed,
+    bool progress_bar
 ){
   Rcpp::Rcout << "[VCMM] Initializing data and models ...";
   double h = pow(response.n_elem, -0.2);
@@ -49,26 +45,26 @@ Rcpp::List VCMM(
     response, 
     subject,
     response_time,
-    random_design,
     vcm_covariates,
     fixed_covariates,
     estimated_time,
     h,
-    mult
+    random_effect
   );
   
   VCMMModel model = VCMMModel(
     vcm_covariates.n_cols, 
     fixed_covariates.n_cols,
     estimated_time.n_elem,
-    random_design.n_cols,
+    random_effect,
     alpha,
     0.,
     estimated_time,
-    ebic_factor,
     rel_tol,
     max_iter,
-    penalize_intercept
+    penalize_intercept,
+    estimate_variance_components,
+    progress_bar
   );
   Rcpp::Rcout << "done.\n";
   
@@ -87,17 +83,6 @@ Rcpp::List VCMM(
   switch(tuning_strategy_to_int[tuning_strategy]){
   // Orthogonal search
   case 1: 
-    // implicitly initialized at h
-    // models = model.orthogonal_search(
-    //   data,
-    //   kernel_scale,
-    //   kernel_scale_factor,
-    //   n_kernel_scale,
-    //   lambda,
-    //   lambda_factor,
-    //   n_lambda,
-    //   orthogonal_search_max_rounds
-    // );
     break;
   // Bisection
   case 2:

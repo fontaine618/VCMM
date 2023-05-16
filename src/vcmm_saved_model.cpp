@@ -9,20 +9,18 @@ VCMMSavedModel::VCMMSavedModel(
   arma::mat a,
   arma::mat b,
   arma::rowvec t0,
-  double alpha, double lambda, double ebic_factor, double kernel_scale,
-  double objective, double apllk, double amllk, double aic, double bic, 
+  double alpha, double lambda, double kernel_scale,
+  double objective, double mllk, double aic, double bic, 
   double rss, double parss, double predparss, double penalty, 
-  double df_vc, double aic_kernel, double bic_kernel, double sig2  
+  double df_vc, double aic_kernel, double bic_kernel, double sig2, double re_ratio  
 ){
   this->a = a;
   this->b = b;
   this->t0 = t0;
   this->alpha = alpha;
   this->lambda = lambda;
-  this->ebic_factor = ebic_factor;
   this->objective = objective;
-  this->apllk = apllk;
-  this->amllk = amllk;
+  this->mllk = mllk;
   this->aic = aic;
   this->bic = bic;
   this->rss = rss;
@@ -33,6 +31,7 @@ VCMMSavedModel::VCMMSavedModel(
   this->aic_kernel = aic_kernel;
   this->bic_kernel = bic_kernel;
   this->sig2 = sig2;
+  this->re_ratio = re_ratio;
   this->kernel_scale = kernel_scale;
 }
 
@@ -44,11 +43,9 @@ Rcpp::List VCMMSavedModel::to_RcppList(){
     Rcpp::Named("alpha", this->alpha),
     Rcpp::Named("lambda", this->lambda),
     Rcpp::Named("objective", this->objective),
-    Rcpp::Named("apllk", this->apllk),
-    Rcpp::Named("amllk", this->amllk),
+    Rcpp::Named("mllk", this->mllk),
     Rcpp::Named("aic", this->aic),
     Rcpp::Named("bic", this->bic),
-    Rcpp::Named("ebic_factor", this->ebic_factor),
     Rcpp::Named("rss", this->rss),
     Rcpp::Named("parss", this->parss),
     Rcpp::Named("penalty", this->penalty),
@@ -56,6 +53,7 @@ Rcpp::List VCMMSavedModel::to_RcppList(){
     Rcpp::Named("aic_kernel", this->aic_kernel),
     Rcpp::Named("bic_kernel", this->bic_kernel),
     Rcpp::Named("sig2", this->sig2),
+    Rcpp::Named("re_ratio", this->re_ratio),
     Rcpp::Named("predparss", this->predparss),
     Rcpp::Named("kernel_scale", this->kernel_scale)
   );

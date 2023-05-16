@@ -5,7 +5,6 @@ prepare_data = function(
   vc_covariates=NULL,
   nvc_covariates=NULL,
   data=NULL,
-  random_design=c("intercept"),
   vc_intercept=TRUE
 ){
   if(!is.null(data)){ # here, we expect response, time, nvc_covariates and vc_covariates to be strings/indices
@@ -42,12 +41,6 @@ prepare_data = function(
   px = ncol(X)
   pu = ncol(U)
   
-  # RANDOM DESIGN
-  random_design = match.arg(random_design)
-  if(random_design=="intercept"){
-    Z = matrix(1, n, 1)
-  }
-  
   return(list(
     t=t,
     n=n,
@@ -57,8 +50,7 @@ prepare_data = function(
     X=X,
     U=U,
     px=px,
-    pu=pu,
-    Z=Z
+    pu=pu
   ))
 }
 

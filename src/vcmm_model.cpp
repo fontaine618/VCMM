@@ -9,28 +9,30 @@ VCMMModel::VCMMModel(
   const uint px,
   const uint pu,
   const uint nt,
-  const uint q,
+  const bool random_effect,
   const double alpha,
   const double lambda,
   const arma::rowvec &t0,
-  const double ebic_factor,
   const double rel_tol,
   const uint max_iter,
-  const bool penalize_intercept
+  const bool penalize_intercept,
+  const bool estimate_variance_components,
+  const bool progress_bar
 ){
   this->px = px;
   this->pu = pu;
   this->nt = nt;
-  this->q = q;
   this->alpha = alpha;
   this->lambda = lambda;
   this->t0 = t0;
-  this->ebic_factor = ebic_factor;
   this->rel_tol = rel_tol;
   this->max_iter = max_iter;
   this->sig2 = 1.;
-  this->Sigma = arma::eye(q, q);
+  this->re_ratio = 1.;
   this->penalize_intercept = penalize_intercept;
+  this->random_effect = random_effect;
+  this->estimate_variance_components = estimate_variance_components;
+  this->progress_bar = progress_bar;
 
   // initialize coefficients to 0
   arma::mat b(px, nt);
@@ -145,7 +147,6 @@ void VCMMModel::compute_statistics(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & Z,
     const std::vector<arma::mat> & I,
     const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P,
@@ -153,8 +154,9 @@ void VCMMModel::compute_statistics(
 ){
   this->rss = this->compute_rss(Y, X, U, I, P);
   this->parss = this->compute_parss(Y, X, U, I, P);
-  this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
-  this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
+  // this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
+  // this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
+  this->mllk = this->marginal_loglikelihood(Y, X, U, W, I, P);
   this->compute_df_kernel(W, kernel_scale);
   
   // uint n = 0;
@@ -177,26 +179,25 @@ void VCMMModel::estimate_parameters(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & P,
-    const std::vector<arma::mat> & Z,
+    std::vector<arma::mat> & P,
     const std::vector<arma::mat> & I,
     uint max_iter
 ){
-  double rss = 0.;
-  double parss = 0.;
-  uint n = 0;
-  std::vector<arma::colvec> R = this->residuals_at_observed_time(Y, X, U, I);
-  
-  for(uint i=0; i<R.size(); i++){
-    arma::colvec pri = P[i] * R[i];
-    rss += arma::dot(R[i], pri);
-    parss += arma::dot(pri, pri);
-    n += Y[i].n_elem;
-  }
-  
-  this->sig2marginal = rss / n;
-  this->sig2profile = parss / n;
-  this->sig2 = this->sig2marginal;
+  // double rss = 0.;
+  // double parss = 0.;
+  // uint n = 0;
+  // std::vector<arma::colvec> R = this->residuals_at_observed_time(Y, X, U, I);
+  // 
+  // for(uint i=0; i<R.size(); i++){
+  //   arma::colvec pri = P[i] * R[i];
+  //   rss += arma::dot(R[i], pri);
+  //   parss += arma::dot(pri, pri);
+  //   n += Y[i].n_elem;
+  // }
+  // 
+  // this->sig2marginal = rss / n;
+  // this->sig2profile = parss / n;
+  // this->sig2 = this->sig2marginal;
 }
 
 void VCMMModel::compute_penalty_weights(
@@ -224,11 +225,9 @@ VCMMSavedModel VCMMModel::save(){
     this->t0,
     this->alpha,
     this->lambda,
-    this->ebic_factor,
     this->kernel_scale,
     this->objective,
-    this->apllk,
-    this->amllk,
+    this->mllk,
     this->aic,
     this->bic,
     this->rss,
@@ -238,7 +237,8 @@ VCMMSavedModel VCMMModel::save(){
     this->df_vc(),
     this->aic_kernel,
     this->bic_kernel,
-    this->sig2
+    this->sig2,
+    this->re_ratio
   );
 }
 
