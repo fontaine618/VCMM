@@ -104,8 +104,7 @@ lsvcmm = function(
   
   # TUNING PREPARATION
   tuning_strategy = match.arg(tuning_strategy)
-  stopifnot(ebic_factor>=0)
-  
+
   # TUNING PREPARATION
   if(is.null(cv)) cv = 0
   if(cv == -1) cv = length(d$subject_ids)  # LOO

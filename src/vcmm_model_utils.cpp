@@ -211,7 +211,6 @@ double VCMMModel::marginal_loglikelihood(
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
     const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & I,
     const std::vector<arma::mat> & P
 ){
   double quad = this->localized_parss(Y, X, U, W, P);
@@ -532,7 +531,7 @@ void VCMMModel::update_precision(
   for(uint i=0; i<P.size(); i++){
     uint ni = P[i].n_rows;
     P[i] = arma::eye(ni, ni);
-    P[i] -= 1/(ni + 1/this->re_ratio);
+    if(this->random_effect) P[i] -= 1/(ni + 1/this->re_ratio);
   }
 }
 

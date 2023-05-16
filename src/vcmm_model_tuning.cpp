@@ -53,7 +53,7 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
     
     if(lambda_factor > 0){
       Rcpp::Rcout << "[VCMM] Computing maximum regularization parameter \n";
-      double lambda_max = this->compute_lambda_max(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
+      double lambda_max = this->compute_lambda_max(data.y, data.x, data.u, data.w, data.p, max_iter);
       lambda = arma::logspace(log10(lambda_max*lambda_factor), log10(lambda_max), n_lambda);
       Rcpp::Rcout << "       done. (lambda max: " << lambda_max << ")\n";
     }
@@ -65,8 +65,8 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
     for(uint l=0; l<n_lambda; l++){
       // Rcpp::Rcout << "[VCMM] Lambda iteration " << l << " (lambda=" << lambda[l] << ")\n";
       this->lambda = lambda[l];
-      this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
-      this->estimate_parameters(data.y, data.x, data.u, data.p, data.i, max_iter);
+      this->fit(data.y, data.x, data.u, data.w, data.p, max_iter);
+      // this->estimate_parameters(data.y, data.x, data.u, data.p, data.i, max_iter);
       this->compute_statistics(data.y, data.x, data.u, data.i, data.w, data.p, data.kernel_scale);
       this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
       VCMMSavedModel submodel = this->save();
@@ -140,9 +140,10 @@ std::vector<VCMMSavedModel> VCMMModel::path(
       this->b = prev_b;
     }
     this->lambda = lambda[k];
-    this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
-    this->estimate_parameters(data.y, data.x, data.u, data.p, data.i, max_iter);
+    this->fit(data.y, data.x, data.u, data.w, data.p, max_iter);
+    // this->estimate_parameters(data.y, data.x, data.u, data.p, data.i, max_iter);
     this->compute_statistics(data.y, data.x, data.u, data.i, data.w, data.p, data.kernel_scale);
+    // This should also compute mllk
     this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
     VCMMSavedModel submodel = this->save();
     submodel.kernel_scale = data.kernel_scale;

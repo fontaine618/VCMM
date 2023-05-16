@@ -72,7 +72,7 @@ Rcpp::List VCMMBoot(
     if(adaptive > 0.) model.compute_penalty_weights(rdata, adaptive);
     model.lambda = lambda;  // the above two will change lambda
     
-    model.fit(rdata.y, rdata.x, rdata.u, rdata.w, rdata.p, rdata.i, max_iter);
+    model.fit(rdata.y, rdata.x, rdata.u, rdata.w, rdata.p, max_iter);
     VCMMSavedModel submodel = model.save();
     submodel.kernel_scale = data.kernel_scale;
     models[b] = submodel;
@@ -86,7 +86,7 @@ Rcpp::List VCMMBoot(
   if(adaptive > 0.) model.compute_penalty_weights(data, adaptive);
   model.lambda = lambda;  // the above two will change lambda
   
-  model.fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
+  model.fit(data.y, data.x, data.u, data.w, data.p, max_iter);
   VCMMSavedModel submodel = model.save();
   submodel.kernel_scale = data.kernel_scale;
   

@@ -103,7 +103,6 @@ public:
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & W,
-      const std::vector<arma::mat> & I,
       const std::vector<arma::mat> & P
   );
   
@@ -252,8 +251,7 @@ public:
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & W,
-      const std::vector<arma::mat> & P,
-      const std::vector<arma::mat> & I,
+      std::vector<arma::mat> & P,
       uint max_iter
   );
   
@@ -262,19 +260,17 @@ public:
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & W,
-      const std::vector<arma::mat> & P,
-      const std::vector<arma::mat> & I,
+      std::vector<arma::mat> & P,
       uint max_iter
   );
   
 
-  void estimate_parameters(
+  void update_parameters(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
-      std::vector<arma::mat> & P,
-      const std::vector<arma::mat> & I,
-      const uint max_iter
+      const std::vector<arma::mat> & W,
+      std::vector<arma::mat> & P
   );
   
   void compute_statistics(
@@ -334,7 +330,7 @@ public:
   );
   
   void compute_penalty_weights(
-      const VCMMData data,
+      VCMMData data,
       const double adaptive 
   );
   

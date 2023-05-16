@@ -55,13 +55,12 @@ double VCMMModel::compute_lambda_max(
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
     const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P,
-    const std::vector<arma::mat> & I,
+    std::vector<arma::mat> & P,
     uint max_iter
 ){
   // start by getting completely sparse solution to get gradients
   this->lambda = 1e6;
-  this->fit(Y, X, U, W, P, I, max_iter);
+  this->fit(Y, X, U, W, P, max_iter);
   std::vector<arma::mat> gradients = this->gradients(Y, X, U, W, P);
   // find max lambda:
   // we start with the two bounds, for each of the two prox operators
@@ -111,8 +110,7 @@ void VCMMModel::fit(
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
     const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P,
-    const std::vector<arma::mat> & I,
+    std::vector<arma::mat> & P,
     uint max_iter
 ){
   // std::vector<arma::mat> g;
@@ -122,25 +120,55 @@ void VCMMModel::fit(
   this->cLa = this->La;
   this->cLb = this->Lb;
   this->momentum = 1.;
-  double prev_obj = this->loss(Y, X, U, W, P) + this->penalty();
-  for(uint iter=1; iter<=max_iter; iter++){
+  uint iter = 0;
+  double obj, mllk;
+  double obj0 = this->loss(Y, X, U, W, P) + this->penalty();
+  double mllk0 = this->marginal_loglikelihood(Y, X, U, W, P);
+  
+  // Outer loop
+  for(uint round=1; round<=100; round++){
+    // Update mean parameters
     
-    this->proximal_gradient_step(Y, X, U, W, P);
-    // this->accelerated_proximal_gradient_step(Y, X, U, W, P);
-    // this->monotone_accelerated_proximal_gradient_step(Y, X, U, W, P);
-    // this->backtracking_accelerated_proximal_gradient_step(Y, X, U, W, P, prev_obj);
+    double obj1 = obj0;
+    double mllk1 = mllk0;
+    double rel_change;
     
-    double obj = this->loss(Y, X, U, W, P) + this->penalty();
-    double rel_change = (obj - prev_obj) / fabs(obj);
-    // if(iter % 1 == 0) Rcpp::Rcout <<
-    //   "       Iteration " << iter << " obj: " << obj << " rel_change: " << rel_change << "\n";
-    prev_obj = obj;
-    if(fabs(rel_change) < this->rel_tol && iter > 0) {
-      // Rcpp::Rcout << "       Iteration " << iter << " obj: " << obj << " rel_change: " << rel_change << " (converged) \n";
-      break;
+    for(uint step=1; step<=100; step++){
+      iter++;
+      if(iter > max_iter) break;
+      this->proximal_gradient_step(Y, X, U, W, P);
+      // this->accelerated_proximal_gradient_step(Y, X, U, W, P);
+      // this->monotone_accelerated_proximal_gradient_step(Y, X, U, W, P);
+      // this->backtracking_accelerated_proximal_gradient_step(Y, X, U, W, P, obj1);
+      obj = this->loss(Y, X, U, W, P) + this->penalty();
+      mllk = this->marginal_loglikelihood(Y, X, U, W, P);
+      rel_change = (obj - obj1) / fabs(obj1);
+      obj1 = obj;
+      mllk1 = mllk;
+      if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
+    if(iter > max_iter) break;
+    
+    for(uint step=1; step<=100; step++){
+      iter++;
+      if(iter > max_iter) break;
+      this->update_parameters(Y, X, U, W, P);
+      obj = this->loss(Y, X, U, W, P) + this->penalty();
+      mllk = this->marginal_loglikelihood(Y, X, U, W, P);
+      rel_change = (obj - obj1) / fabs(obj1);
+      obj1 = obj;
+      mllk1 = mllk;
+      if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
+    }
+    if(iter > max_iter) break;
+    
+    rel_change = (obj - obj0) / fabs(obj0);
+    obj0 = obj;
+    mllk0 = mllk;
+    if(fabs(rel_change) < this->rel_tol) break; // outer loop converged
   }
-  this->objective = prev_obj;
+  this->objective = obj;
+  this->mllk = mllk;
 }
 
 void VCMMModel::compute_statistics(
@@ -152,11 +180,11 @@ void VCMMModel::compute_statistics(
     const std::vector<arma::mat> & P,
     const double kernel_scale
 ){
-  this->rss = this->compute_rss(Y, X, U, I, P);
-  this->parss = this->compute_parss(Y, X, U, I, P);
+  // this->rss = this->compute_rss(Y, X, U, I, P);
+  this->parss = this->localized_parss(Y, X, U, W, P);
   // this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
   // this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
-  this->mllk = this->marginal_loglikelihood(Y, X, U, W, I, P);
+  this->mllk = this->marginal_loglikelihood(Y, X, U, W, P);
   this->compute_df_kernel(W, kernel_scale);
   
   // uint n = 0;
@@ -175,13 +203,12 @@ void VCMMModel::compute_test_statistics(
 }
 
 
-void VCMMModel::estimate_parameters(
+void VCMMModel::update_parameters(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
-    std::vector<arma::mat> & P,
-    const std::vector<arma::mat> & I,
-    uint max_iter
+    const std::vector<arma::mat> & W,
+    std::vector<arma::mat> & P
 ){
   // double rss = 0.;
   // double parss = 0.;
@@ -201,11 +228,11 @@ void VCMMModel::estimate_parameters(
 }
 
 void VCMMModel::compute_penalty_weights(
-    const VCMMData data,
+    VCMMData data,
     const double adaptive 
 ){
   this->lambda = 0.;
-  this->fit(data.y, data.x, data.u, data.w, data.p, data.i, max_iter);
+  this->fit(data.y, data.x, data.u, data.w, data.p, max_iter);
   this->lasso_weights = arma::pow(arma::abs(this->b), -adaptive);
   arma::colvec row_norms = arma::zeros(this->px);
   for(uint j=0; j<this->px; j++) row_norms[j] = arma::norm(this->b.row(j), 2);
