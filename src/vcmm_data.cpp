@@ -13,7 +13,7 @@ arma::mat rbf_kernel_weight_matrix(
   od.each_col() = t2;
   od.each_row() -= t1;
   
-  od = arma::exp(- arma::square(od / scale) ) / scale;
+  od = arma::exp(- arma::square(od / scale) ) / sqrt(scale * scale * arma::datum::pi);
   
   return od;
 }

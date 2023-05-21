@@ -74,6 +74,30 @@ public:
       const std::vector<arma::mat> & P
   );
   
+  std::vector<arma::colvec> global_linear_predictor(
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  std::vector<arma::colvec> global_residuals(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  std::vector<arma::mat> global_precision(
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  std::vector<arma::mat> global_weight(
+      const std::vector<arma::mat> & W
+  );
+  
   double loss(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
@@ -98,7 +122,23 @@ public:
   //     const std::vector<arma::mat> & P
   // );
   
-  double marginal_loglikelihood(
+  double global_marginal_loglikelihood(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  double localized_marginal_loglikelihood(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  double global_parss(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
@@ -123,6 +163,22 @@ public:
   );
   
   double localized_parss(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  double re_ratio_nr_step(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  double re_ratio_nr_step_global(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,

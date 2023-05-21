@@ -31,11 +31,15 @@ estiamte without random effects
 increase signal size
 SPFDA compare point estimates
 
+distribution of estiamte with fixed design
+focus on point estimates
+
+clean simulation
+
 # DMBT1
 
-2way histo-geno + NVC sex, all taxa after filtering
-Need to upgrade simultaneous confidence band for multiple curves
-Need to better display within groups (add effects)
+Do some sort of heatmaps
+
 
 # Competing methods
 

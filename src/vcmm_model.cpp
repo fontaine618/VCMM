@@ -123,7 +123,7 @@ void VCMMModel::fit(
   uint iter = 0;
   double obj, mllk;
   double obj0 = this->loss(Y, X, U, W, P) + this->penalty();
-  double mllk0 = this->marginal_loglikelihood(Y, X, U, W, P);
+  double mllk0 = this->global_marginal_loglikelihood(Y, X, U, W, P);
   
   // Outer loop
   for(uint round=1; round<=100; round++){
@@ -131,7 +131,7 @@ void VCMMModel::fit(
     
     double obj1 = obj0;
     double mllk1 = mllk0;
-    double rel_change;
+    double rel_change, lmllk;
     
     for(uint step=1; step<=100; step++){
       iter++;
@@ -141,12 +141,13 @@ void VCMMModel::fit(
       // this->monotone_accelerated_proximal_gradient_step(Y, X, U, W, P);
       // this->backtracking_accelerated_proximal_gradient_step(Y, X, U, W, P, obj1);
       obj = this->loss(Y, X, U, W, P) + this->penalty();
-      mllk = this->marginal_loglikelihood(Y, X, U, W, P);
+      mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
+      lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
       Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << ": obj="
-                  << obj << " mllk=" << mllk << "\n";
+                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -157,12 +158,14 @@ void VCMMModel::fit(
       if(iter > max_iter) break;
       this->update_parameters(Y, X, U, W, P);
       obj = this->loss(Y, X, U, W, P) + this->penalty();
-      mllk = this->marginal_loglikelihood(Y, X, U, W, P);
+      mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
+      lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
       Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
-                  << obj << " mllk=" << mllk << "\n";
+                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
+                  << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -188,8 +191,8 @@ void VCMMModel::compute_statistics(
   // this->rss = this->compute_rss(Y, X, U, I, P);
   this->parss = this->localized_parss(Y, X, U, W, P);
   // this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
-  // this->amllk = this->approximate_marginal_loglikelihood(Y, X, U, I, P);
-  this->mllk = this->marginal_loglikelihood(Y, X, U, W, P);
+  // this->amllk = this->approximate_global_marginal_loglikelihood(Y, X, U, I, P);
+  this->mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
   this->compute_df_kernel(W, kernel_scale);
   
   // uint n = 0;
@@ -215,22 +218,11 @@ void VCMMModel::update_parameters(
     const std::vector<arma::mat> & W,
     std::vector<arma::mat> & P
 ){
-  // double rss = 0.;
-  // double parss = 0.;
-  // uint n = 0;
-  // std::vector<arma::colvec> R = this->residuals_at_observed_time(Y, X, U, I);
-  // 
-  // for(uint i=0; i<R.size(); i++){
-  //   arma::colvec pri = P[i] * R[i];
-  //   rss += arma::dot(R[i], pri);
-  //   parss += arma::dot(pri, pri);
-  //   n += Y[i].n_elem;
-  // }
-  // 
-  // this->sig2marginal = rss / n;
-  // this->sig2profile = parss / n;
-  // this->sig2 = this->sig2marginal;
-  double sig2 = this->localized_parss(Y, X, U, W, P);
+  double rho_step = this->re_ratio_nr_step_global(Y, X, U, W, P);
+  Rcpp::Rcout << "[VCMM] re_ratio=" << re_ratio << " re_step=" << rho_step <<  "\n";
+  this->re_ratio *= rho_step;
+  this->update_precision(P);
+  double sig2 = this->global_parss(Y, X, U, W, P);
   uint n = 0;
   for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
   sig2 = sig2 / n;
