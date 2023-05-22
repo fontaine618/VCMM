@@ -29,6 +29,7 @@ confidence_band = function(
       excludes_zero=(out$L>0) | (out$U<0)
     )
   }else{
+    # TODO: this is wrong when you drop entries
     out = lapply(var, function(v){
       data.frame(
         L=out$L[v, ], 
