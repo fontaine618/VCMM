@@ -98,6 +98,10 @@ public:
       const std::vector<arma::mat> & W
   );
   
+  double total_weight(
+      const std::vector<arma::mat> & W
+  );
+  
   double loss(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
@@ -203,8 +207,7 @@ public:
       const std::vector<arma::mat> & P
   );
   
-  std::vector<arma::mat> total_weight(const std::vector<arma::mat> & W);
-  
+
   double penalty();
   
   uint df_vc();

@@ -66,6 +66,7 @@ Rcpp::List VCMM(
     estimate_variance_components,
     progress_bar
   );
+  model.re_ratio = log(response.n_elem);
   Rcpp::Rcout << "done.\n";
   
   

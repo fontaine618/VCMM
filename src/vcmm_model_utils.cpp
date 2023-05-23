@@ -96,7 +96,7 @@ std::vector<arma::mat> VCMMModel::precision_global(
 ){
   // unscaled
   uint N = W.size();
-  std::vector<arma::mat> WT = this->total_weight(W);
+  std::vector<arma::mat> WT = this->global_weight(W);
   std::vector<arma::mat> PG(N);
   for(uint i=0; i<N; i++){
     PG[i] = P[i] % WT[i];
@@ -139,6 +139,26 @@ std::vector<arma::mat> VCMMModel::global_weight(
   }
   
   return GW;
+}
+
+
+
+
+double VCMMModel::total_weight(
+    const std::vector<arma::mat> & W
+){
+  uint N = W.size();
+  double totweight = 0.;
+  
+  for(uint i=0; i<N; i++){
+    uint ni = W[i].n_rows;
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec wk = arma::sqrt(W[i].col(k));
+      totweight += arma::accu(arma::pow(wk, 2));
+    }
+  }
+  
+  return totweight;
 }
 
 std::vector<arma::colvec> VCMMModel::global_residuals(
@@ -258,14 +278,14 @@ double VCMMModel::localized_marginal_loglikelihood(
   double quad = 0.;
   double logdet = 0.;
   std::vector<arma::mat> R = this->residuals(Y, X, U);
-  std::vector<arma::mat> PG = this->precision_global(W, P);
+  // std::vector<arma::mat> PG = this->precision_global(W, P);
   for(uint i=0; i<Y.size(); i++){
     for(uint k=0; k<this->nt; k++){
       arma::colvec wk = arma::sqrt(W[i].col(k));
-      arma::mat Pi = P[i] % (wk * wk.t());
+      arma::mat Pik = P[i] % (wk * wk.t());
       arma::colvec rk = R[i].col(k);
-      quad += arma::dot(rk, Pi *rk);
-      logdet += arma::log_det_sympd(PG[i] / (this->sig2 * 2 * arma::datum::pi));
+      quad += arma::dot(rk, Pik * rk);
+      logdet += arma::log_det_sympd(Pik / (this->sig2 * 2 * arma::datum::pi));
     }
   }
   
@@ -364,25 +384,30 @@ double VCMMModel::re_ratio_nr_step_global(
 ){
   double deriv1 = 0.;
   double deriv2 = 0.;
-  std::vector<arma::mat> R = this->residuals(Y, X, U);
+  std::vector<arma::colvec> GR = this->global_residuals(Y, X, U, W, P);
   std::vector<arma::mat> WG = this->global_weight(W);
   std::vector<arma::mat> PG = this->global_precision(W, P);
   
   for(uint i=0; i<Y.size(); i++){
     uint ni = Y[i].n_elem;
     double denum = ni*this->re_ratio + 1;
-    double wrss = arma::accu(arma::pow(W[i] % R[i], 2)) ;
+    double wrss = arma::dot(GR[i], WG[i] * GR[i]) ;
     arma::mat PGinvWG = arma::inv(PG[i]) * WG[i];
     double Tr1 = arma::trace(PGinvWG);
-    double Tr2 = arma::accu(PGinvWG % PGinvWG.t());
+    // double Tr2 = arma::accu(PGinvWG % PGinvWG.t());
+    double Tr2 = arma::trace(PGinvWG * PGinvWG);
     deriv1 += -0.5 * Tr1 / pow(denum, 2);
     deriv1 += 0.5 * wrss / (pow(denum, 2) * this->sig2);
     deriv2 += ni * Tr1 / pow(denum, 3);
-    deriv2 += Tr2 / pow(denum, 4);
-    deriv2 += - ni * wrss / (pow(denum, 3) * this->sig2);
+    deriv2 -= Tr2 / pow(denum, 4);
+    deriv2 -= ni * wrss / (pow(denum, 3) * this->sig2);
   }
-  Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
-  return exp(deriv1/(deriv1*this->re_ratio+deriv2));
+  // Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
+  // Negative log NR step
+  // return exp(deriv1/(deriv2*this->re_ratio+deriv1));
+  // Negative NR step
+  return -deriv1/deriv2;
+  // return deriv1*0.01;
 }
 
 double VCMMModel::localized_rss(
@@ -402,21 +427,6 @@ double VCMMModel::localized_rss(
   }
   return parss;
 }
-
-std::vector<arma::mat> VCMMModel::total_weight(const std::vector<arma::mat> & W){
-  uint N = W.size();
-  std::vector<arma::mat> WT(N);
-  for(uint i=0; i<N; i++){
-    uint ni = W[i].n_rows;
-    WT[i] = arma::zeros(ni, ni);
-    for(uint k=0; k<this->nt; k++){
-      arma::colvec wk = arma::sqrt(W[i].col(k));
-      WT[i] += wk * wk.t();
-    }
-  }
-  return WT;
-}
-
 
 std::vector<arma::mat> VCMMModel::gradients(
     const std::vector<arma::colvec> & Y,

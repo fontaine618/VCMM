@@ -127,6 +127,10 @@ void VCMMModel::fit(
   
   // Outer loop
   for(uint round=1; round<=100; round++){
+    // Update Lipschitz constant
+    
+    this->compute_lipschitz_constants(X, U, W, P);
+    
     // Update mean parameters
     
     double obj1 = obj0;
@@ -146,12 +150,12 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << ": obj="
+      Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
                   << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
-    if(!this->estimate_variance_components) break; // no need for the outer loop 
+    // if(!this->estimate_variance_components) break; // no need for the outer loop 
     
     for(uint step=1; step<=100; step++){
       iter++;
@@ -218,14 +222,20 @@ void VCMMModel::update_parameters(
     const std::vector<arma::mat> & W,
     std::vector<arma::mat> & P
 ){
-  double rho_step = this->re_ratio_nr_step_global(Y, X, U, W, P);
-  Rcpp::Rcout << "[VCMM] re_ratio=" << re_ratio << " re_step=" << rho_step <<  "\n";
-  this->re_ratio *= rho_step;
-  this->update_precision(P);
+  if(this->random_effect && this->estimate_variance_components){
+    double rho_step = this->re_ratio_nr_step_global(Y, X, U, W, P);
+    // Rcpp::Rcout << "[VCMM] rho_step=" << rho_step <<  "\n";
+    // this->re_ratio /= rho_step;
+    this->re_ratio -= rho_step;
+    this->re_ratio = fmin(fmax(this->re_ratio, 0.0001), 10000);
+    this->update_precision(P);
+  }
   double sig2 = this->global_parss(Y, X, U, W, P);
   uint n = 0;
   for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
   sig2 = sig2 / n;
+  // double total_weight = this->total_weight(W);
+  // sig2 = sig2 / total_weight;
   this->sig2 = sig2;
 }
 
