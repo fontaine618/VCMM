@@ -132,15 +132,15 @@ Rcpp::List VCMM(
     }
     // arma::join_rows(fitted_lambdas, fitted_hs, restart).print();
     
-    arma::vec predparss(models.size(), arma::fill::zeros);
+    arma::vec cv_score(models.size(), arma::fill::zeros);
     for(uint fold = 0; fold<nfolds; fold++){
       Rcpp::Rcout << "[VCMM] CV fold " << fold+1 << "/" << nfolds << "\n";
       VCMMData train = data.get_other_folds(fold);
       VCMMData test = data.get_fold(fold);
       std::vector<VCMMSavedModel> cvmodels = model.path(train, fitted_hs, fitted_lambdas, restart, test, adaptive);
-      for(uint m=0; m<cvmodels.size(); m++) predparss(m) += (double)cvmodels[m].predparss;
+      for(uint m=0; m<cvmodels.size(); m++) cv_score(m) += (double)cvmodels[m].cv_score;
     }
-    for(uint m=0; m<predparss.n_elem; m++) models[m].predparss = predparss[m];
+    for(uint m=0; m<cv_score.n_elem; m++) models[m].cv_score = cv_score[m];
   }
   
   std::vector<Rcpp::List> models_list(models.size());

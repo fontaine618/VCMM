@@ -152,7 +152,7 @@ lsvcmm = function(
     mllk=sapply(obj$models, function(model) model$mllk),
     aic=sapply(obj$models, function(model) model$aic),
     bic=sapply(obj$models, function(model) model$bic),
-    predparss=sapply(obj$models, function(model) model$predparss)
+    cv_score=sapply(obj$models, function(model) model$cv_score)
   )
   best_idx = which.min(models_path$aic)
   

@@ -42,23 +42,6 @@ std::vector<arma::colvec> VCMMModel::linear_predictor_at_observed_time(
   return out;
 }
 
-std::vector<arma::mat> VCMMModel::residuals(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U
-){
-  std::vector<arma::mat> eta(Y.size()), R(Y.size());
-  eta = this->linear_predictor(X, U);
-  
-  for(uint i=0; i<R.size(); i++){
-    arma::mat etai = eta[i];
-    etai.each_col() -= Y[i];
-    R[i] = -etai;
-  }
-  
-  return R;
-}
-
 std::vector<arma::colvec> VCMMModel::global_linear_predictor(
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
@@ -88,6 +71,74 @@ std::vector<arma::colvec> VCMMModel::global_linear_predictor(
   return g_eta;
 }
 
+std::vector<arma::mat> VCMMModel::residuals(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U
+){
+  std::vector<arma::mat> eta(Y.size()), R(Y.size());
+  eta = this->linear_predictor(X, U);
+  
+  for(uint i=0; i<R.size(); i++){
+    arma::mat etai = eta[i];
+    etai.each_col() -= Y[i];
+    R[i] = -etai;
+  }
+  
+  return R;
+}
+
+std::vector<arma::colvec> VCMMModel::precision_adjusted_residuals(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & I,
+    const std::vector<arma::mat> & P
+){
+  std::vector<arma::colvec> R(Y.size());
+  R = this->residuals_at_observed_time(Y, X, U, I);
+  
+  for(uint i=0; i<R.size(); i++){
+    R[i] = P[i] * R[i];
+  }
+  
+  return R;
+}
+
+
+std::vector<arma::colvec> VCMMModel::global_residuals(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  std::vector<arma::colvec> eta(Y.size()), R(Y.size());
+  eta = this->global_linear_predictor(X, U, W, P);
+  
+  for(uint i=0; i<R.size(); i++){
+    R[i] = Y[i] - eta[i];
+  }
+  
+  return R;
+}
+
+
+std::vector<arma::colvec> VCMMModel::residuals_at_observed_time(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & I
+){
+  std::vector<arma::colvec> eta(Y.size()), R(Y.size());
+  eta = this->linear_predictor_at_observed_time(X, U, I);
+  
+  for(uint i=0; i<R.size(); i++){
+    R[i] = Y[i] - eta[i];
+  }
+  
+  return R;
+}
 
 
 std::vector<arma::mat> VCMMModel::precision_global(
@@ -161,58 +212,7 @@ double VCMMModel::total_weight(
   return totweight;
 }
 
-std::vector<arma::colvec> VCMMModel::global_residuals(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P
-){
-  std::vector<arma::colvec> eta(Y.size()), R(Y.size());
-  eta = this->global_linear_predictor(X, U, W, P);
-  
-  for(uint i=0; i<R.size(); i++){
-    R[i] = Y[i] - eta[i];
-  }
-  
-  return R;
-}
-
-
-std::vector<arma::colvec> VCMMModel::residuals_at_observed_time(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & I
-){
-  std::vector<arma::colvec> eta(Y.size()), R(Y.size());
-  eta = this->linear_predictor_at_observed_time(X, U, I);
-  
-  for(uint i=0; i<R.size(); i++){
-    R[i] = Y[i] - eta[i];
-  }
-  
-  return R;
-}
-
-std::vector<arma::colvec> VCMMModel::precision_adjusted_residuals(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & I,
-    const std::vector<arma::mat> & P
-){
-  std::vector<arma::colvec> R(Y.size());
-  R = this->residuals_at_observed_time(Y, X, U, I);
-  
-  for(uint i=0; i<R.size(); i++){
-    R[i] = P[i] * R[i];
-  }
-  
-  return R;
-}
-
-double VCMMModel::compute_parss(
+double VCMMModel::compute_rss(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
@@ -229,21 +229,75 @@ double VCMMModel::compute_parss(
   return rss;
 }
 
-double VCMMModel::compute_rss(
+double VCMMModel::localized_parss(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & I,
+    const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
   double parss = 0.;
-  std::vector<arma::colvec> R = this->precision_adjusted_residuals(Y, X, U, I, P);
+  std::vector<arma::mat> R = this->residuals(Y, X, U);
   
-  for(uint i=0; i<R.size(); i++){
-    parss += arma::dot(R[i], R[i]);
+  for(uint i=0; i<Y.size(); i++){
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
+      parss += arma::dot(rk, P[i] * rk);
+    }
+  }
+  return parss;
+}
+
+// double VCMMModel::compute_rss(
+//     const std::vector<arma::colvec> & Y,
+//     const std::vector<arma::mat> & X,
+//     const std::vector<arma::mat> & U,
+//     const std::vector<arma::mat> & I,
+//     const std::vector<arma::mat> & P
+// ){
+//   double parss = 0.;
+//   std::vector<arma::colvec> R = this->precision_adjusted_residuals(Y, X, U, I, P);
+//   
+//   for(uint i=0; i<R.size(); i++){
+//     parss += arma::dot(R[i], R[i]);
+//   }
+//   
+//   return parss;
+// }
+
+double VCMMModel::localized_rss(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W
+){
+  double parss = 0.;
+  std::vector<arma::mat> R = this->residuals(Y, X, U);
+  
+  for(uint i=0; i<Y.size(); i++){
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
+      parss += arma::dot(rk, rk);
+    }
+  }
+  return parss;
+}
+
+double VCMMModel::global_parss(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  double quad = 0.;
+  std::vector<arma::colvec> R = this->global_residuals(Y, X, U, W, P);
+  std::vector<arma::mat> PG = this->precision_global(W, P);
+  for(uint i=0; i<Y.size(); i++){
+    quad += arma::dot(R[i], PG[i] * R[i]);
   }
   
-  return parss;
+  return quad;
 }
 
 double VCMMModel::loss(
@@ -266,6 +320,16 @@ double VCMMModel::loss(
   }
   
   return 0.5 * loss / n;
+}
+
+double VCMMModel::penalty(){
+  double penalty = 0.;
+  for(uint j=0; j<this->px; j++){
+    penalty += this->alpha * arma::accu(arma::abs(this->b.row(j)) % this->lasso_weights.row(j));
+    double l2j = arma::norm(this->b.row(j), 2);
+    penalty += (1. - this->alpha) * this->grplasso_weights(j) * l2j;
+  }
+  return penalty * this->lambda;
 }
 
 double VCMMModel::localized_marginal_loglikelihood(
@@ -311,122 +375,7 @@ double VCMMModel::global_marginal_loglikelihood(
   return 0.5 * (logdet - quad / this->sig2);
 }
 
-double VCMMModel::global_parss(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P
-){
-  double quad = 0.;
-  std::vector<arma::colvec> R = this->global_residuals(Y, X, U, W, P);
-  std::vector<arma::mat> PG = this->precision_global(W, P);
-  for(uint i=0; i<Y.size(); i++){
-    quad += arma::dot(R[i], PG[i] * R[i]);
-  }
-  
-  return quad;
-}
 
-double VCMMModel::localized_parss(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P
-){
-  double parss = 0.;
-  std::vector<arma::mat> R = this->residuals(Y, X, U);
-  
-  for(uint i=0; i<Y.size(); i++){
-    for(uint k=0; k<this->nt; k++){
-      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
-      parss += arma::dot(rk, P[i] * rk);
-    }
-  }
-  return parss;
-}
-
-
-double VCMMModel::re_ratio_nr_step(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P
-){
-  double deriv1 = 0.;
-  double deriv2 = 0.;
-  std::vector<arma::mat> R = this->residuals(Y, X, U);
-  
-  for(uint i=0; i<Y.size(); i++){
-    uint ni = Y[i].n_elem;
-    double denum = ni*this->re_ratio + 1;
-    for(uint k=0; k<this->nt; k++){
-      arma::colvec rk = R[i].col(k);
-      arma::colvec wk = W[i].col(k);
-      double wr = arma::dot(rk, wk);
-      deriv1 += -0.5 * ni / denum - 0.5 * wr*wr / (denum*denum*this->sig2);
-      deriv2 += 0.5 * ni * ni / (denum*denum) - ni*wr*wr / (denum*denum*denum*this->sig2);
-    }
-  }
-  Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
-  return exp(deriv1/(deriv1*this->re_ratio+deriv2));
-}
-
-
-double VCMMModel::re_ratio_nr_step_global(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & W,
-    const std::vector<arma::mat> & P
-){
-  double deriv1 = 0.;
-  double deriv2 = 0.;
-  std::vector<arma::colvec> GR = this->global_residuals(Y, X, U, W, P);
-  std::vector<arma::mat> WG = this->global_weight(W);
-  std::vector<arma::mat> PG = this->global_precision(W, P);
-  
-  for(uint i=0; i<Y.size(); i++){
-    uint ni = Y[i].n_elem;
-    double denum = ni*this->re_ratio + 1;
-    double wrss = arma::dot(GR[i], WG[i] * GR[i]) ;
-    arma::mat PGinvWG = arma::inv(PG[i]) * WG[i];
-    double Tr1 = arma::trace(PGinvWG);
-    // double Tr2 = arma::accu(PGinvWG % PGinvWG.t());
-    double Tr2 = arma::trace(PGinvWG * PGinvWG);
-    deriv1 += -0.5 * Tr1 / pow(denum, 2);
-    deriv1 += 0.5 * wrss / (pow(denum, 2) * this->sig2);
-    deriv2 += ni * Tr1 / pow(denum, 3);
-    deriv2 -= Tr2 / pow(denum, 4);
-    deriv2 -= ni * wrss / (pow(denum, 3) * this->sig2);
-  }
-  // Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
-  // Negative log NR step
-  // return exp(deriv1/(deriv2*this->re_ratio+deriv1));
-  // Negative NR step
-  return -deriv1/deriv2;
-  // return deriv1*0.01;
-}
-
-double VCMMModel::localized_rss(
-    const std::vector<arma::colvec> & Y,
-    const std::vector<arma::mat> & X,
-    const std::vector<arma::mat> & U,
-    const std::vector<arma::mat> & W
-){
-  double parss = 0.;
-  std::vector<arma::mat> R = this->residuals(Y, X, U);
-  
-  for(uint i=0; i<Y.size(); i++){
-    for(uint k=0; k<this->nt; k++){
-      arma::colvec rk = R[i].col(k) % arma::sqrt(W[i].col(k));
-      parss += arma::dot(rk, rk);
-    }
-  }
-  return parss;
-}
 
 std::vector<arma::mat> VCMMModel::gradients(
     const std::vector<arma::colvec> & Y,
@@ -456,7 +405,9 @@ std::vector<arma::mat> VCMMModel::gradients(
   return std::vector<arma::mat>{- grad_a / sw, - grad_b / sw};
 }
 
-std::vector<std::vector<arma::mat>> VCMMModel::_hessian_blocks(
+
+
+std::vector<std::vector<arma::mat>> VCMMModel::hessian_blocks(
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
     const std::vector<arma::mat> & W,
@@ -505,7 +456,7 @@ std::vector<std::vector<arma::mat>> VCMMModel::_hessian_blocks(
 
 
 
-arma::mat VCMMModel::_hessian_from_blocks(
+arma::mat VCMMModel::hessian_from_blocks(
     arma::mat hessian_a,
     std::vector<arma::mat> hessian_b,
     std::vector<arma::mat> hessian_ab
@@ -540,9 +491,9 @@ arma::mat VCMMModel::hessian(
     const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
-  std::vector<std::vector<arma::mat>> hessians = this->_hessian_blocks(X, U, W, P);
+  std::vector<std::vector<arma::mat>> hessians = this->hessian_blocks(X, U, W, P);
   
-  return this->_hessian_from_blocks(
+  return this->hessian_from_blocks(
       hessians[0][0],
                  hessians[1],
                          hessians[2]
@@ -556,8 +507,8 @@ void VCMMModel::compute_lipschitz_constants(
     const std::vector<arma::mat> & W,
     const std::vector<arma::mat> & P
 ){
-  std::vector<std::vector<arma::mat>> hessians = this->_hessian_blocks(X, U, W, P);
-  arma::mat hessian = this->_hessian_from_blocks(
+  std::vector<std::vector<arma::mat>> hessians = this->hessian_blocks(X, U, W, P);
+  arma::mat hessian = this->hessian_from_blocks(
     hessians[0][0],
     hessians[1],
     hessians[2]
@@ -614,16 +565,6 @@ void VCMMModel::compute_lipschitz_constants(
   this->Lb = Lb;
 }
 
-double VCMMModel::penalty(){
-  double penalty = 0.;
-  for(uint j=0; j<this->px; j++){
-    penalty += this->alpha * arma::accu(arma::abs(this->b.row(j)) % this->lasso_weights.row(j));
-    double l2j = arma::norm(this->b.row(j), 2);
-    penalty += (1. - this->alpha) * this->grplasso_weights(j) * l2j;
-  }
-  return penalty * this->lambda;
-}
-
 arma::mat VCMMModel::proximal_asgl(
   const arma::mat &b
 ){
@@ -674,18 +615,6 @@ arma::mat VCMMModel::proximal_L1L2(
   return out;
 }
 
-void VCMMModel::update_precision(
-    std::vector<arma::mat> & P
-){
-  // This computes the unscaled Precision (without sig2)
-  uint ni;
-  for(uint i=0; i<P.size(); i++){
-    uint ni = P[i].n_rows;
-    P[i] = arma::eye(ni, ni);
-    if(this->random_effect) P[i] -= 1/(ni + 1/this->re_ratio);
-  }
-}
-
 
 void VCMMModel::compute_ics(){
   this->bic = -2*this->mllk + this->bic_kernel;
@@ -729,7 +658,6 @@ void VCMMModel::compute_df_kernel(
   this->bic_kernel = arma::dot(arma::log(n), df) * range / (this->nt * kernel_scale);
   this->aic_kernel = 2 * arma::accu(df) * range / (this->nt * kernel_scale);
 }
-
 
 void VCMMModel::backtracking_accelerated_proximal_gradient_step(
     const std::vector<arma::colvec> & Y,
@@ -858,4 +786,52 @@ void VCMMModel::monotone_accelerated_proximal_gradient_step(
   this->tmpa = tmpa;
   this->tmpb = tmpb;
   this->momentum = newt;
+}
+
+
+double VCMMModel::re_ratio_nr_step_global(
+    const std::vector<arma::colvec> & Y,
+    const std::vector<arma::mat> & X,
+    const std::vector<arma::mat> & U,
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  double deriv1 = 0.;
+  double deriv2 = 0.;
+  std::vector<arma::colvec> GR = this->global_residuals(Y, X, U, W, P);
+  std::vector<arma::mat> WG = this->global_weight(W);
+  std::vector<arma::mat> PG = this->global_precision(W, P);
+  
+  for(uint i=0; i<Y.size(); i++){
+    uint ni = Y[i].n_elem;
+    double denum = ni*this->re_ratio + 1;
+    double wrss = arma::dot(GR[i], WG[i] * GR[i]) ;
+    arma::mat PGinvWG = arma::inv(PG[i]) * WG[i];
+    double Tr1 = arma::trace(PGinvWG);
+    // double Tr2 = arma::accu(PGinvWG % PGinvWG.t());
+    double Tr2 = arma::trace(PGinvWG * PGinvWG);
+    deriv1 += -0.5 * Tr1 / pow(denum, 2);
+    deriv1 += 0.5 * wrss / (pow(denum, 2) * this->sig2);
+    deriv2 += ni * Tr1 / pow(denum, 3);
+    deriv2 -= Tr2 / pow(denum, 4);
+    deriv2 -= ni * wrss / (pow(denum, 3) * this->sig2);
+  }
+  // Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
+  // Negative log NR step
+  // return exp(deriv1/(deriv2*this->re_ratio+deriv1));
+  // Negative NR step
+  return -deriv1/deriv2;
+  // return deriv1*0.01;
+}
+
+void VCMMModel::update_precision(
+    std::vector<arma::mat> & P
+){
+  // This computes the unscaled Precision (without sig2)
+  uint ni;
+  for(uint i=0; i<P.size(); i++){
+    uint ni = P[i].n_rows;
+    P[i] = arma::eye(ni, ni);
+    if(this->random_effect) P[i] -= 1/(ni + 1/this->re_ratio);
+  }
 }

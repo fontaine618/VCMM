@@ -11,7 +11,7 @@ VCMMSavedModel::VCMMSavedModel(
   arma::rowvec t0,
   double alpha, double lambda, double kernel_scale,
   double objective, double mllk, double aic, double bic, 
-  double rss, double parss, double predparss, double penalty, 
+  double rss, double parss, double cv_score, double penalty, 
   double df_vc, double aic_kernel, double bic_kernel, double sig2, double re_ratio  
 ){
   this->a = a;
@@ -25,7 +25,7 @@ VCMMSavedModel::VCMMSavedModel(
   this->bic = bic;
   this->rss = rss;
   this->parss = parss;
-  this->predparss = predparss;
+  this->cv_score = cv_score;
   this->penalty = penalty;
   this->df_vc = df_vc;
   this->aic_kernel = aic_kernel;
@@ -54,7 +54,7 @@ Rcpp::List VCMMSavedModel::to_RcppList(){
     Rcpp::Named("bic_kernel", this->bic_kernel),
     Rcpp::Named("sig2", this->sig2),
     Rcpp::Named("re_ratio", this->re_ratio),
-    Rcpp::Named("predparss", this->predparss),
+    Rcpp::Named("cv_score", this->cv_score),
     Rcpp::Named("kernel_scale", this->kernel_scale)
   );
 }

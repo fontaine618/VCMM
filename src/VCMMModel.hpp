@@ -19,7 +19,7 @@ public:
   uint px, pu, nt, max_iter;
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
-  double objective, rss, parss, aic_kernel, bic_kernel, mllk, aic, bic, ebic, predparss;
+  double objective, rss, parss, aic_kernel, bic_kernel, mllk, aic, bic, ebic, cv_score;
   double sig2, re_ratio;
   arma::mat lasso_weights;
   arma::colvec grplasso_weights;
@@ -257,14 +257,14 @@ public:
       const std::vector<arma::mat> & P
   );
   
-  std::vector<std::vector<arma::mat>> _hessian_blocks (
+  std::vector<std::vector<arma::mat>> hessian_blocks (
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P
   );
   
-  arma::mat _hessian_from_blocks(
+  arma::mat hessian_from_blocks(
       arma::mat hessian_a,
       std::vector<arma::mat> hessian_b,
       std::vector<arma::mat> hessian_ab
@@ -354,7 +354,8 @@ public:
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,
       const std::vector<arma::mat> & I,
-      const std::vector<arma::mat> & P
+      const std::vector<arma::mat> & W,
+      std::vector<arma::mat> & P
   );
   
   void compute_ics();

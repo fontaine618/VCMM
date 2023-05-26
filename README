@@ -15,9 +15,6 @@
 
 [ ] Local linear regression
   - should be fairly simple: just add additional covariates
-[ ] Estimate RE
-  - Using the weighted residuals interpretation, that could be easier
-[ ] MPI in C++?
 
 # Experiments ideas
 
@@ -72,9 +69,6 @@ Do some sort of heatmaps
 - R/metagenomeSeq (Paulson, 2013) Bioconductor
   - ZIG
   
-# Bugs, etc.
-
-[ ] The penalty on beta1 is hard coded for now; could be an argument later
 
 # Notes
 

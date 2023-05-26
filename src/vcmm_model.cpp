@@ -146,12 +146,11 @@ void VCMMModel::fit(
       // this->backtracking_accelerated_proximal_gradient_step(Y, X, U, W, P, obj1);
       obj = this->loss(Y, X, U, W, P) + this->penalty();
       mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
-      lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
-                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
+      // Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
+      //             << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -163,13 +162,12 @@ void VCMMModel::fit(
       this->update_parameters(Y, X, U, W, P);
       obj = this->loss(Y, X, U, W, P) + this->penalty();
       mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
-      lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
-                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
-                  << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
+      // Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
+      //             << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
+      //             << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -193,7 +191,7 @@ void VCMMModel::compute_statistics(
     const double kernel_scale
 ){
   // this->rss = this->compute_rss(Y, X, U, I, P);
-  this->parss = this->localized_parss(Y, X, U, W, P);
+  this->parss = this->global_parss(Y, X, U, W, P);
   // this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
   // this->amllk = this->approximate_global_marginal_loglikelihood(Y, X, U, I, P);
   this->mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
@@ -209,9 +207,12 @@ void VCMMModel::compute_test_statistics(
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
     const std::vector<arma::mat> & I,
-    const std::vector<arma::mat> & P
+    const std::vector<arma::mat> & W,
+    std::vector<arma::mat> & P
 ){
-  this->predparss = this->compute_parss(Y, X, U, I, P);
+  this->update_precision(P);
+  // this->cv_score = this->global_parss(Y, X, U, W, P);
+  this->cv_score = this->compute_rss(Y, X, U, I, P);
 }
 
 
@@ -271,7 +272,7 @@ VCMMSavedModel VCMMModel::save(){
     this->bic,
     this->rss,
     this->parss,
-    this->predparss,
+    this->cv_score,
     this->penalty(),
     this->df_vc(),
     this->aic_kernel,

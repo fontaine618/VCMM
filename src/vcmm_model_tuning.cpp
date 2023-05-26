@@ -68,7 +68,7 @@ std::vector<VCMMSavedModel> VCMMModel::grid_search(
       this->fit(data.y, data.x, data.u, data.w, data.p, max_iter);
       // this->estimate_parameters(data.y, data.x, data.u, data.p, data.i, max_iter);
       this->compute_statistics(data.y, data.x, data.u, data.i, data.w, data.p, data.kernel_scale);
-      this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
+      this->compute_test_statistics(test.y, test.x, test.u, test.i, test.w, test.p);
       VCMMSavedModel submodel = this->save();
       submodel.kernel_scale = data.kernel_scale;
       if(l==0){
@@ -144,7 +144,7 @@ std::vector<VCMMSavedModel> VCMMModel::path(
     // this->estimate_parameters(data.y, data.x, data.u, data.p, data.i, max_iter);
     this->compute_statistics(data.y, data.x, data.u, data.i, data.w, data.p, data.kernel_scale);
     // This should also compute mllk
-    this->compute_test_statistics(test.y, test.x, test.u, test.i, test.p);
+    this->compute_test_statistics(test.y, test.x, test.u, test.i, test.w, test.p);
     VCMMSavedModel submodel = this->save();
     submodel.kernel_scale = data.kernel_scale;
     pbar.increment();
