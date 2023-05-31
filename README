@@ -72,8 +72,6 @@ Do some sort of heatmaps
 
 # Notes
 
-- The CV/AIC/BIC often show two local modes
-  - one with medium h, one with large h
 - "For a general basis system, a set of sparse coefficients
 does not necessarily generate a function with local sparse
 feature, which may make trouble in the computation. On the

@@ -385,6 +385,7 @@ std::vector<arma::mat> VCMMModel::gradients(
     const std::vector<arma::mat> & P
 ){
   std::vector<arma::mat> R = this->residuals(Y, X, U);
+  // std::vector<arma::colvec> R = this->global_residuals(Y, X, U, W, P);
   arma::mat grad_a(this->pu, 1);
   arma::mat grad_b(this->px, this->nt);
   grad_a.zeros();
@@ -393,6 +394,7 @@ std::vector<arma::mat> VCMMModel::gradients(
   
   for(uint i=0; i<Y.size(); i++){
     for(uint k=0; k<this->nt; k++){
+      // arma::colvec rk = R[i];
       arma::colvec rk = R[i].col(k);
       arma::colvec wk = W[i].col(k);
       // sw += arma::accu(arma::sqrt(wk * wk.t()));
@@ -402,6 +404,7 @@ std::vector<arma::mat> VCMMModel::gradients(
     }
     sw += Y[i].n_elem;
   }
+  // the objective is scaled by 1/n
   return std::vector<arma::mat>{- grad_a / sw, - grad_b / sw};
 }
 
@@ -799,6 +802,7 @@ double VCMMModel::re_ratio_nr_step_global(
   double deriv1 = 0.;
   double deriv2 = 0.;
   std::vector<arma::colvec> GR = this->global_residuals(Y, X, U, W, P);
+  // std::vector<arma::mat> R = this->residuals(Y, X, U);
   std::vector<arma::mat> WG = this->global_weight(W);
   std::vector<arma::mat> PG = this->global_precision(W, P);
   
@@ -806,9 +810,12 @@ double VCMMModel::re_ratio_nr_step_global(
     uint ni = Y[i].n_elem;
     double denum = ni*this->re_ratio + 1;
     double wrss = arma::dot(GR[i], WG[i] * GR[i]) ;
+    // double wrss = 0.;
+    // for(uint k=0; k<this->nt; k++){
+    //   wrss += arma::dot(W[i].col(k), R[i].col(k));
+    // }
     arma::mat PGinvWG = arma::inv(PG[i]) * WG[i];
     double Tr1 = arma::trace(PGinvWG);
-    // double Tr2 = arma::accu(PGinvWG % PGinvWG.t());
     double Tr2 = arma::trace(PGinvWG * PGinvWG);
     deriv1 += -0.5 * Tr1 / pow(denum, 2);
     deriv1 += 0.5 * wrss / (pow(denum, 2) * this->sig2);

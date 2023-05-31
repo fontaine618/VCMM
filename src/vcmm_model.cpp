@@ -154,7 +154,9 @@ void VCMMModel::fit(
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
-    // if(!this->estimate_variance_components) break; // no need for the outer loop 
+    
+    // even if estimate_variance_components=F, we want to run the second inner loop to estimate sig2
+    // it will take two iterations and the mean parameters won't change, so no need for extra logic
     
     for(uint step=1; step<=100; step++){
       iter++;
@@ -227,7 +229,7 @@ void VCMMModel::update_parameters(
     double rho_step = this->re_ratio_nr_step_global(Y, X, U, W, P);
     // Rcpp::Rcout << "[VCMM] rho_step=" << rho_step <<  "\n";
     // this->re_ratio /= rho_step;
-    this->re_ratio -= rho_step;
+    this->re_ratio += rho_step;
     this->re_ratio = fmin(fmax(this->re_ratio, 0.0001), 10000);
     this->update_precision(P);
   }
