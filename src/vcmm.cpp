@@ -23,6 +23,7 @@ Rcpp::List VCMM(
     const arma::rowvec & estimated_time,
     bool random_effect,
     bool estimate_variance_components,
+    double re_ratio,
     const std::string tuning_strategy,
     arma::vec kernel_scale,
     const double kernel_scale_factor,
@@ -49,7 +50,8 @@ Rcpp::List VCMM(
     fixed_covariates,
     estimated_time,
     h,
-    random_effect
+    random_effect,
+    re_ratio
   );
   
   VCMMModel model = VCMMModel(
@@ -66,7 +68,8 @@ Rcpp::List VCMM(
     estimate_variance_components,
     progress_bar
   );
-  model.re_ratio = log(response.n_elem);
+  double re_ratio2 = (re_ratio < 0.) ? log(subject.n_elem): re_ratio;
+  model.re_ratio = random_effect ? re_ratio2 : 0.;
   Rcpp::Rcout << "done.\n";
   
   

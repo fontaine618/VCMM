@@ -18,6 +18,7 @@ Rcpp::List VCMMBoot(
     const arma::rowvec & estimated_time,
     bool random_effect,
     bool estimate_variance_components,
+    const double re_ratio,
     const double kernel_scale,
     const double alpha,
     const double lambda,
@@ -37,7 +38,8 @@ Rcpp::List VCMMBoot(
     fixed_covariates,
     estimated_time,
     kernel_scale,
-    random_effect
+    random_effect,
+    re_ratio
   );
   
   VCMMModel model = VCMMModel(
@@ -54,7 +56,8 @@ Rcpp::List VCMMBoot(
     estimate_variance_components,
     progress_bar
   );
-  
+  double re_ratio2 = (re_ratio < 0.) ? log(subject.n_elem): re_ratio;
+  model.re_ratio = random_effect ? re_ratio2 : 0.;
   Rcpp::Rcout << "done.\n";
   
   std::vector<VCMMSavedModel> models(n_samples);

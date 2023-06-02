@@ -23,7 +23,8 @@ public:
     const arma::mat & fixed_covariates,
     const arma::rowvec & estimated_time,
     const double kernel_scale,
-    const bool random_effect
+    const bool random_effect,
+    const double re_ratio
   );
   
   VCMMData(

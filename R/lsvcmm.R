@@ -40,6 +40,7 @@ lsvcmm = function(
   # design
   random_effect=T,
   estimate_variance_components=F,
+  re_ratio=-1,
   vc_intercept=TRUE,
   estimated_time=NULL,
   
@@ -92,7 +93,7 @@ lsvcmm = function(
   
   # KERNEL PREPARATION
   kernel = match.arg(kernel)
-  if(is.null(kernel_scale)){
+  if(is.null(kernel_scale) || kernel_scale==0){
     kernel_scale = numeric(0L)
     stopifnot(kernel_scale_factor>1)
     stopifnot(n_kernel_scale>0)
@@ -119,6 +120,7 @@ lsvcmm = function(
     estimated_time=tt$t0,
     random_effect=random_effect,
     estimate_variance_components=estimate_variance_components,
+    re_ratio=re_ratio,
     tuning_strategy=tuning_strategy,
     kernel_scale=kernel_scale, 
     kernel_scale_factor=kernel_scale_factor,

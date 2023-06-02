@@ -18,20 +18,10 @@
 
 # Experiments ideas
 
-speed of change
-time sampling design
-point estimates, GAMM: only report MSE, not classification
-fix Locker?
-
-
-estiamte without random effects
-increase signal size
-SPFDA compare point estimates
-
-distribution of estiamte with fixed design
-focus on point estimates
-
-clean simulation
+LAsso at each time point: h->0
+adaptive =0 to check if bias is a thing or not
+increase signal/sample size
+increase RE strength to see if estimation helps
 
 # DMBT1
 

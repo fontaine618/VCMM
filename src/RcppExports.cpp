@@ -12,8 +12,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // VCMM
-Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, bool random_effect, bool estimate_variance_components, const std::string tuning_strategy, arma::vec kernel_scale, const double kernel_scale_factor, uint n_kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const float adaptive, const bool penalize_intercept, const uint max_iter, const double rel_tol, const uint nfolds, const int cv_seed, bool progress_bar);
-RcppExport SEXP _VCMM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP random_effectSEXP, SEXP estimate_variance_componentsSEXP, SEXP tuning_strategySEXP, SEXP kernel_scaleSEXP, SEXP kernel_scale_factorSEXP, SEXP n_kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP adaptiveSEXP, SEXP penalize_interceptSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP nfoldsSEXP, SEXP cv_seedSEXP, SEXP progress_barSEXP) {
+Rcpp::List VCMM(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, bool random_effect, bool estimate_variance_components, double re_ratio, const std::string tuning_strategy, arma::vec kernel_scale, const double kernel_scale_factor, uint n_kernel_scale, const double alpha, arma::vec lambda, const double lambda_factor, uint n_lambda, const float adaptive, const bool penalize_intercept, const uint max_iter, const double rel_tol, const uint nfolds, const int cv_seed, bool progress_bar);
+RcppExport SEXP _VCMM_VCMM(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP random_effectSEXP, SEXP estimate_variance_componentsSEXP, SEXP re_ratioSEXP, SEXP tuning_strategySEXP, SEXP kernel_scaleSEXP, SEXP kernel_scale_factorSEXP, SEXP n_kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP lambda_factorSEXP, SEXP n_lambdaSEXP, SEXP adaptiveSEXP, SEXP penalize_interceptSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP nfoldsSEXP, SEXP cv_seedSEXP, SEXP progress_barSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -25,6 +25,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::rowvec& >::type estimated_time(estimated_timeSEXP);
     Rcpp::traits::input_parameter< bool >::type random_effect(random_effectSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_variance_components(estimate_variance_componentsSEXP);
+    Rcpp::traits::input_parameter< double >::type re_ratio(re_ratioSEXP);
     Rcpp::traits::input_parameter< const std::string >::type tuning_strategy(tuning_strategySEXP);
     Rcpp::traits::input_parameter< arma::vec >::type kernel_scale(kernel_scaleSEXP);
     Rcpp::traits::input_parameter< const double >::type kernel_scale_factor(kernel_scale_factorSEXP);
@@ -40,13 +41,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const uint >::type nfolds(nfoldsSEXP);
     Rcpp::traits::input_parameter< const int >::type cv_seed(cv_seedSEXP);
     Rcpp::traits::input_parameter< bool >::type progress_bar(progress_barSEXP);
-    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, vcm_covariates, fixed_covariates, estimated_time, random_effect, estimate_variance_components, tuning_strategy, kernel_scale, kernel_scale_factor, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, adaptive, penalize_intercept, max_iter, rel_tol, nfolds, cv_seed, progress_bar));
+    rcpp_result_gen = Rcpp::wrap(VCMM(response, subject, response_time, vcm_covariates, fixed_covariates, estimated_time, random_effect, estimate_variance_components, re_ratio, tuning_strategy, kernel_scale, kernel_scale_factor, n_kernel_scale, alpha, lambda, lambda_factor, n_lambda, adaptive, penalize_intercept, max_iter, rel_tol, nfolds, cv_seed, progress_bar));
     return rcpp_result_gen;
 END_RCPP
 }
 // VCMMBoot
-Rcpp::List VCMMBoot(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, bool random_effect, bool estimate_variance_components, const double kernel_scale, const double alpha, const double lambda, const float adaptive, const bool penalize_intercept, const uint max_iter, const double rel_tol, const int n_samples, const bool progress_bar);
-RcppExport SEXP _VCMM_VCMMBoot(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP random_effectSEXP, SEXP estimate_variance_componentsSEXP, SEXP kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP adaptiveSEXP, SEXP penalize_interceptSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP n_samplesSEXP, SEXP progress_barSEXP) {
+Rcpp::List VCMMBoot(const arma::colvec& response, const arma::ucolvec& subject, const arma::colvec& response_time, const arma::mat& vcm_covariates, const arma::mat& fixed_covariates, const arma::rowvec& estimated_time, bool random_effect, bool estimate_variance_components, const double re_ratio, const double kernel_scale, const double alpha, const double lambda, const float adaptive, const bool penalize_intercept, const uint max_iter, const double rel_tol, const int n_samples, const bool progress_bar);
+RcppExport SEXP _VCMM_VCMMBoot(SEXP responseSEXP, SEXP subjectSEXP, SEXP response_timeSEXP, SEXP vcm_covariatesSEXP, SEXP fixed_covariatesSEXP, SEXP estimated_timeSEXP, SEXP random_effectSEXP, SEXP estimate_variance_componentsSEXP, SEXP re_ratioSEXP, SEXP kernel_scaleSEXP, SEXP alphaSEXP, SEXP lambdaSEXP, SEXP adaptiveSEXP, SEXP penalize_interceptSEXP, SEXP max_iterSEXP, SEXP rel_tolSEXP, SEXP n_samplesSEXP, SEXP progress_barSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -58,6 +59,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::rowvec& >::type estimated_time(estimated_timeSEXP);
     Rcpp::traits::input_parameter< bool >::type random_effect(random_effectSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_variance_components(estimate_variance_componentsSEXP);
+    Rcpp::traits::input_parameter< const double >::type re_ratio(re_ratioSEXP);
     Rcpp::traits::input_parameter< const double >::type kernel_scale(kernel_scaleSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
@@ -67,14 +69,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type rel_tol(rel_tolSEXP);
     Rcpp::traits::input_parameter< const int >::type n_samples(n_samplesSEXP);
     Rcpp::traits::input_parameter< const bool >::type progress_bar(progress_barSEXP);
-    rcpp_result_gen = Rcpp::wrap(VCMMBoot(response, subject, response_time, vcm_covariates, fixed_covariates, estimated_time, random_effect, estimate_variance_components, kernel_scale, alpha, lambda, adaptive, penalize_intercept, max_iter, rel_tol, n_samples, progress_bar));
+    rcpp_result_gen = Rcpp::wrap(VCMMBoot(response, subject, response_time, vcm_covariates, fixed_covariates, estimated_time, random_effect, estimate_variance_components, re_ratio, kernel_scale, alpha, lambda, adaptive, penalize_intercept, max_iter, rel_tol, n_samples, progress_bar));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_VCMM_VCMM", (DL_FUNC) &_VCMM_VCMM, 23},
-    {"_VCMM_VCMMBoot", (DL_FUNC) &_VCMM_VCMMBoot, 17},
+    {"_VCMM_VCMM", (DL_FUNC) &_VCMM_VCMM, 24},
+    {"_VCMM_VCMMBoot", (DL_FUNC) &_VCMM_VCMMBoot, 18},
     {NULL, NULL, 0}
 };
 

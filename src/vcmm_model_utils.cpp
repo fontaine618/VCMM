@@ -342,14 +342,15 @@ double VCMMModel::localized_marginal_loglikelihood(
   double quad = 0.;
   double logdet = 0.;
   std::vector<arma::mat> R = this->residuals(Y, X, U);
-  // std::vector<arma::mat> PG = this->precision_global(W, P);
   for(uint i=0; i<Y.size(); i++){
     for(uint k=0; k<this->nt; k++){
       arma::colvec wk = arma::sqrt(W[i].col(k));
       arma::mat Pik = P[i] % (wk * wk.t());
       arma::colvec rk = R[i].col(k);
       quad += arma::dot(rk, Pik * rk);
-      logdet += arma::log_det_sympd(Pik / (this->sig2 * 2 * arma::datum::pi));
+      arma::colvec evals = arma::eig_sym(Pik / (this->sig2 * 2 * arma::datum::pi));
+      evals = evals.elem(arma::find(evals > 1e-6));
+      logdet += arma::accu(arma::log(evals));
     }
   }
   
@@ -658,8 +659,9 @@ void VCMMModel::compute_df_kernel(
   // for now, we assume 1/T as the contribution of each time point, 
   // we also assume k(0)=1
   double range = this->t0.max() - this->t0.min();
-  this->bic_kernel = arma::dot(arma::log(n), df) * range / (this->nt * kernel_scale);
-  this->aic_kernel = 2 * arma::accu(df) * range / (this->nt * kernel_scale);
+  double scale = fmin(1, range / (this->nt * kernel_scale));
+  this->bic_kernel = arma::dot(arma::log(n), df) * scale;
+  this->aic_kernel = 2 * arma::accu(df) * scale;
 }
 
 void VCMMModel::backtracking_accelerated_proximal_gradient_step(
@@ -792,7 +794,7 @@ void VCMMModel::monotone_accelerated_proximal_gradient_step(
 }
 
 
-double VCMMModel::re_ratio_nr_step_global(
+void VCMMModel::re_ratio_nr_step_global(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
     const std::vector<arma::mat> & U,
@@ -820,15 +822,21 @@ double VCMMModel::re_ratio_nr_step_global(
     deriv1 += -0.5 * Tr1 / pow(denum, 2);
     deriv1 += 0.5 * wrss / (pow(denum, 2) * this->sig2);
     deriv2 += ni * Tr1 / pow(denum, 3);
-    deriv2 -= Tr2 / pow(denum, 4);
+    deriv2 -= 0.5*Tr2 / pow(denum, 4);
     deriv2 -= ni * wrss / (pow(denum, 3) * this->sig2);
   }
-  // Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
+  Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
   // Negative log NR step
   // return exp(deriv1/(deriv2*this->re_ratio+deriv1));
   // Negative NR step
-  return -deriv1/deriv2;
   // return deriv1*0.01;
+  if(deriv2 > 0.){
+    this->re_ratio *= (deriv1 > 0.) ? 2. : 0.5; // jump somewhere else
+  }else{
+    double rho_step = -deriv1/deriv2;
+    this->re_ratio += rho_step;
+  }
+  this->prev_re_ratio = this->re_ratio;
 }
 
 void VCMMModel::update_precision(

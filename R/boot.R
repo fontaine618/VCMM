@@ -9,6 +9,7 @@ lsvcmm.boot = function(
   # design
   random_effect=T,
   estimate_variance_components=F,
+  re_ratio=-1,
   vc_intercept=TRUE,
   estimated_time=NULL,
   
@@ -56,6 +57,7 @@ lsvcmm.boot = function(
     estimated_time=tt$t0,
     random_effect=random_effect,
     estimate_variance_components=estimate_variance_components,
+    re_ratio=re_ratio,
     kernel_scale=kernel_scale, 
     alpha=sgl,
     lambda=lambda,

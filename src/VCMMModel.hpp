@@ -20,7 +20,7 @@ public:
   double La, Lb, momentum, rel_tol, cLa, cLb;
   arma::rowvec t0;
   double objective, rss, parss, aic_kernel, bic_kernel, mllk, aic, bic, ebic, cv_score;
-  double sig2, re_ratio;
+  double sig2, re_ratio, prev_re_ratio;
   arma::mat lasso_weights;
   arma::colvec grplasso_weights;
   bool penalize_intercept, progress_bar, estimate_variance_components, random_effect;
@@ -182,7 +182,7 @@ public:
       const std::vector<arma::mat> & P
   );
   
-  double re_ratio_nr_step_global(
+  void re_ratio_nr_step_global(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
       const std::vector<arma::mat> & U,

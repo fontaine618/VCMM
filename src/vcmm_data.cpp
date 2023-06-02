@@ -15,21 +15,26 @@ arma::mat rbf_kernel_weight_matrix(
   
   od = arma::exp(- arma::square(od / scale) ) / sqrt(scale * scale * arma::datum::pi);
   
+  od.elem(arma::find(od < 1e-6)).zeros();
+  
   return od;
 }
 
 std::vector<arma::mat> initialize_precision_per_subject(
     const arma::uvec & subject,
-    bool random_effect
+    bool random_effect,
+    const double re_ratio
 ){
   arma::uvec ids = unique(subject);
   std::vector<arma::mat> out(ids.n_elem);
   arma::mat prec;
-  double re_ratio = log(subject.n_elem) ? random_effect : 0.;
+  double re_ratio2 = (re_ratio < 0.) ? log(subject.n_elem): re_ratio;
+  re_ratio2 = random_effect ? re_ratio2 : 0.;
+  
   
   for(uint i : ids){
     uint ni = arma::accu(subject == i);
-    prec = arma::eye(ni, ni) + re_ratio;
+    prec = arma::eye(ni, ni) + re_ratio2;
     out[i] = arma::inv(prec);
   }
   
@@ -111,7 +116,8 @@ VCMMData::VCMMData(
   const arma::mat & fixed_covariates, // n x pu in R, need to copy outside if constant, but allows changing covariates
   const arma::rowvec & estimated_time, // 1 x nt in R, though it is preferable if scaled to [0,1]
   const double kernel_scale,
-  const bool random_effect
+  const bool random_effect,
+  const double re_ratio
 ){
   this->kernel_scale = kernel_scale;
   // // create design matrix for time-varying covariates (with intercept)
@@ -126,7 +132,7 @@ VCMMData::VCMMData(
   // compute the precision matrix of random effects
   // (using the approximation from Fan and Li, 2012)
   // NB mult<0 uses mult=log(N), N=nb. observations 
-  this->p = initialize_precision_per_subject(subject, random_effect);
+  this->p = initialize_precision_per_subject(subject, random_effect, re_ratio);
   
   // to list format and initialize object
   this->y = to_list_by_subject(subject, response);

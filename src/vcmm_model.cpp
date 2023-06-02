@@ -28,7 +28,7 @@ VCMMModel::VCMMModel(
   this->rel_tol = rel_tol;
   this->max_iter = max_iter;
   this->sig2 = 1.;
-  this->re_ratio = 1.;
+  this->re_ratio = 1. ? random_effect : 0.;
   this->penalize_intercept = penalize_intercept;
   this->random_effect = random_effect;
   this->estimate_variance_components = estimate_variance_components;
@@ -120,6 +120,7 @@ void VCMMModel::fit(
   this->cLa = this->La;
   this->cLb = this->Lb;
   this->momentum = 1.;
+  this->prev_re_ratio = this->re_ratio;
   uint iter = 0;
   double obj, mllk;
   double obj0 = this->loss(Y, X, U, W, P) + this->penalty();
@@ -149,8 +150,8 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      // Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
-      //             << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
+      Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
+                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -167,9 +168,9 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      // Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
-      //             << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
-      //             << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
+      Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
+                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
+                  << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -195,8 +196,9 @@ void VCMMModel::compute_statistics(
   // this->rss = this->compute_rss(Y, X, U, I, P);
   this->parss = this->global_parss(Y, X, U, W, P);
   // this->apllk = this->approximate_profile_loglikelihood(Y, X, U, I, P);
-  // this->amllk = this->approximate_global_marginal_loglikelihood(Y, X, U, I, P);
+  double lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
   this->mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
+  // Rcpp::Rcout << "mllk: " <<this->mllk << " lmllk: " <<lmllk << "\n";
   this->compute_df_kernel(W, kernel_scale);
   
   // uint n = 0;
@@ -226,10 +228,9 @@ void VCMMModel::update_parameters(
     std::vector<arma::mat> & P
 ){
   if(this->random_effect && this->estimate_variance_components){
-    double rho_step = this->re_ratio_nr_step_global(Y, X, U, W, P);
+    this->re_ratio_nr_step_global(Y, X, U, W, P);
     // Rcpp::Rcout << "[VCMM] rho_step=" << rho_step <<  "\n";
     // this->re_ratio /= rho_step;
-    this->re_ratio += rho_step;
     this->re_ratio = fmin(fmax(this->re_ratio, 0.0001), 10000);
     this->update_precision(P);
   }
