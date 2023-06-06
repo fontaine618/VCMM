@@ -80,7 +80,7 @@ lsvcmm = function(
   
   # REGULARIZATION PREPARATION
   stopifnot((sgl >= 0) && (sgl <=1))
-  if(is.null(lambda)){
+  if(is.null(lambda) || lambda < 0){
     lambda = numeric(0L)
     stopifnot(lambda_factor>0)
     stopifnot(n_lambda>0)

@@ -147,6 +147,7 @@ void VCMMModel::fit(
       // this->backtracking_accelerated_proximal_gradient_step(Y, X, U, W, P, obj1);
       obj = this->loss(Y, X, U, W, P) + this->penalty();
       mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
+      lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
@@ -165,6 +166,7 @@ void VCMMModel::fit(
       this->update_parameters(Y, X, U, W, P);
       obj = this->loss(Y, X, U, W, P) + this->penalty();
       mllk = this->global_marginal_loglikelihood(Y, X, U, W, P);
+      lmllk = this->localized_marginal_loglikelihood(Y, X, U, W, P);
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
@@ -234,13 +236,14 @@ void VCMMModel::update_parameters(
     this->re_ratio = fmin(fmax(this->re_ratio, 0.0001), 10000);
     this->update_precision(P);
   }
-  double sig2 = this->global_parss(Y, X, U, W, P);
+  // Global marginal likelihood optimization
+  double rss = this->global_parss(Y, X, U, W, P);
   uint n = 0;
   for(uint i=0; i<Y.size(); i++) n += Y[i].n_elem;
-  sig2 = sig2 / n;
-  // double total_weight = this->total_weight(W);
-  // sig2 = sig2 / total_weight;
-  this->sig2 = sig2;
+  // Localized marginal likelihood optimization
+  // double rss = this->localized_parss(Y, X, U, W, P);
+  // uint n = this->effective_sample_size(W, P);
+  this->sig2 = rss / n;
 }
 
 void VCMMModel::compute_penalty_weights(

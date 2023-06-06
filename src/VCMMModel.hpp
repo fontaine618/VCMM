@@ -190,6 +190,14 @@ public:
       const std::vector<arma::mat> & P
   );
   
+  void re_ratio_nr_step_local(
+      const std::vector<arma::colvec> & Y,
+      const std::vector<arma::mat> & X,
+      const std::vector<arma::mat> & U,
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
   double localized_rss(
       const std::vector<arma::colvec> & Y,
       const std::vector<arma::mat> & X,
@@ -198,6 +206,11 @@ public:
   );
   
   double logdet_global(
+      const std::vector<arma::mat> & W,
+      const std::vector<arma::mat> & P
+  );
+  
+  uint effective_sample_size(
       const std::vector<arma::mat> & W,
       const std::vector<arma::mat> & P
   );

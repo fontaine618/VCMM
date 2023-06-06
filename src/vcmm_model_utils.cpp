@@ -332,6 +332,24 @@ double VCMMModel::penalty(){
   return penalty * this->lambda;
 }
 
+
+uint VCMMModel::effective_sample_size(
+    const std::vector<arma::mat> & W,
+    const std::vector<arma::mat> & P
+){
+  uint n = 0;
+  
+  for(uint i=0; i<W.size(); i++){
+    for(uint k=0; k<this->nt; k++){
+      arma::colvec wk = arma::sqrt(W[i].col(k));
+      arma::mat PW = (wk * wk.t()) % P[i];
+      arma::colvec evals = arma::eig_sym(PW);
+      n += arma::accu(evals > 1e-6);
+    }
+  }
+  return n;
+}
+
 double VCMMModel::localized_marginal_loglikelihood(
     const std::vector<arma::colvec> & Y,
     const std::vector<arma::mat> & X,
