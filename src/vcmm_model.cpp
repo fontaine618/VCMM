@@ -151,8 +151,8 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
-                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
+      // Rcpp::Rcout << "[VCMM] " << round << "." << "A" << "." << step << "(" <<  iter << "): obj="
+      //             << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;
@@ -170,9 +170,9 @@ void VCMMModel::fit(
       rel_change = (obj - obj1) / fabs(obj1);
       obj1 = obj;
       mllk1 = mllk;
-      Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
-                  << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
-                  << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
+      // Rcpp::Rcout << "[VCMM] " << round << "." << "B" << "." << step << ": obj="
+      //             << obj << " gmllk=" << mllk <<  " lmllk=" << lmllk
+      //             << " sig2=" << this->sig2 <<  " re_ratio=" << this->re_ratio << "\n";
       if(fabs(rel_change) < this->rel_tol) break; // inner loop converged
     }
     if(iter > max_iter) break;

@@ -843,7 +843,7 @@ void VCMMModel::re_ratio_nr_step_global(
     deriv2 -= 0.5*Tr2 / pow(denum, 4);
     deriv2 -= ni * wrss / (pow(denum, 3) * this->sig2);
   }
-  Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
+  // Rcpp::Rcout << "[VCMM] deriv1=" << deriv1 << " deriv2=" << deriv2 <<  "\n";
   // Negative log NR step
   // return exp(deriv1/(deriv2*this->re_ratio+deriv1));
   // Negative NR step
